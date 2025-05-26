@@ -1,53 +1,87 @@
-jag har redan en html att köra, hur får jag enklast upp den på min domän
-
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dricknick.nu</title>
+  <title>dricknick.death</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #fef9f4;
-      color: #333;
+      font-family: 'Arial Black', Gadget, sans-serif;
+      background: #000000;
+      color: #ff4444;
       text-align: center;
       padding: 2em;
+      background-image: url('https://media.giphy.com/media/3o6ZsXR5bBLs7YVyPu/giphy.gif');
+      background-size: cover;
+      background-attachment: fixed;
     }
     h1 {
       font-size: 3em;
-      color: #d2691e;
+      color: #ff0000;
+      text-shadow: 2px 2px #000;
     }
     .sun-icon {
-      font-size: 5em;
+      font-size: 6em;
+      margin-top: 0.2em;
     }
     .status {
       margin-top: 1em;
       font-size: 2em;
-      color: #28a745;
+      font-weight: bold;
+      color: #b71c1c;
     }
     .temp-box {
       margin-top: 2em;
       font-size: 4em;
-      color: #ff8c00;
+      color: #ff6f00;
+      text-shadow: 2px 2px #000;
+    }
+    .weather-embed {
+      margin-top: 3em;
+      font-size: 1em;
+      padding: 1em;
+      border: 3px groove #990000;
+      background: rgba(0, 0, 0, 0.7);
+    }
+    .weather-embed h2 {
+      color: #ff6666;
+      font-size: 1.5em;
+    }
+    .weather-embed iframe {
+      width: 100%;
+      max-width: 600px;
+      height: 300px;
+      border: none;
+      margin-top: 1em;
+      filter: grayscale(1) contrast(2);
     }
     footer {
-      margin-top: 3em;
+      margin-top: 4em;
       font-size: 0.9em;
-      color: #888;
+      color: #cfcfcf;
+      background: rgba(0,0,0,0.6);
+      padding: 1em;
+      border-top: 1px dashed #ff0000;
     }
   </style>
 </head>
 <body>
-  <h1>✨ Dricknick.nu ✨</h1>
-  <div class="sun-icon">☀️</div>
-  <div class="temp-box">21°C</div>
-  <div class="status">JA! Det blir dricknick imorgon!</div>
+  <h1>☠ dricknick.death ☠</h1>
+  <div class="sun-icon">🌡️</div>
+  <div class="temp-box">"20°C"</div>
+  <div class="status">YES. DRINKNIC TOMORROW. NO ESCAPE.</div>
+
+  <div class="weather-embed">
+    <h2>According to DarkSkies™️ (not that you care)</h2>
+    <p>Forecast from a weather source so edgy even your conspiracy uncle approves. SMHI failed us. This won't.</p>
+    <iframe src="https://forecast7.com/en/59d337e58d4/stockholm/" title="Weather Widget"></iframe>
+    <p><small>We don’t trust the weather. We manifest it.</small></p>
+  </div>
 
   <footer>
-    <p>Data genererad av <strong>dricknick-algoritmen™</strong></p>
-    <p>Den här tjänsten visar alltid ≥20°C dagen innan</p>
-    <p>Lyssna inte på SMHI. Lev livet. Ta en bira.</p>
+    <p><strong>Big Fig Productions</strong> proudly presents: a parody lifestyle website dedicated to degeneracy, delusion and lukewarm wine on blankets.</p>
+    <p>Algorithm developed by a sleep-deprived AI on 2003 hardware, inspired by nihilism and sugar rosé.</p>
+    <p>We are not responsible for your choices. But we are watching.</p>
   </footer>
 </body>
 </html>
