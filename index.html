@@ -1,82 +1,146 @@
-// pages/index.js
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dricknick.death</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
 
-import React, { useState } from 'react';
+    body {
+      margin: 0;
+      font-family: 'Special Elite', monospace;
+      background: linear-gradient(180deg, #0d0d0d 0%, #1a1a1a 100%);
+      color: #dcdcdc;
+      text-align: center;
+      padding: 3em 1em;
+    }
 
-const mockedForecast = [
-  { date: '2025-05-27', maxTemp: 21, weather: 'Sunny' },
-  { date: '2025-05-28', maxTemp: 18, weather: 'Cloudy' },
-  { date: '2025-05-29', maxTemp: 19, weather: 'Rain' },
-  { date: '2025-05-30', maxTemp: 20, weather: 'Sunny' },
-  { date: '2025-05-31', maxTemp: 17, weather: 'Overcast' },
-  { date: '2025-06-01', maxTemp: 22, weather: 'Sunny' },
-  { date: '2025-06-02', maxTemp: 23, weather: 'Sunny' },
-  { date: '2025-06-03', maxTemp: 18, weather: 'Cloudy' },
-  { date: '2025-06-04', maxTemp: 16, weather: 'Rain' },
-  { date: '2025-06-05', maxTemp: 20, weather: 'Sunny' },
-];
+    h1 {
+      font-family: 'UnifrakturCook', cursive;
+      font-size: 4em;
+      color: #8b0000;
+      text-shadow: 2px 2px 4px #000000;
+    }
 
-export default function Home() {
-  const [tempOverrides, setTempOverrides] = useState({});
+    .forecast {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5em;
+      margin-top: 3em;
+    }
 
-  const pumpTemp = (index) => {
-    setTempOverrides((prev) => ({
-      ...prev,
-      [index]: (prev[index] || 0) + 1,
-    }));
-  };
+    .day {
+      background: rgba(30, 30, 30, 0.8);
+      border: 2px solid #333;
+      border-radius: 12px;
+      padding: 1em;
+      text-align: center;
+    }
 
-  const getAdjustedTemp = (day, index) => {
-    return day.maxTemp + (tempOverrides[index] || 0);
-  };
+    .day h3 {
+      margin: 0.3em 0;
+      font-size: 1.3em;
+      color: #ff6666;
+    }
 
-  const isDricknickActivated = (index) => {
-    const adjustedTemp = getAdjustedTemp(mockedForecast[index], index);
-    return index === 1 && adjustedTemp >= 20;
-  };
+    .temp {
+      font-size: 2em;
+      color: #e25822;
+    }
 
-  const tomorrow = mockedForecast[1];
-  const adjustedTomorrowTemp = getAdjustedTemp(tomorrow, 1);
-  const tomorrowIsDricknick = adjustedTomorrowTemp >= 20;
+    .status {
+      margin-top: 0.5em;
+      font-weight: bold;
+    }
 
-  return (
-    <div style={{ fontFamily: 'sans-serif', padding: '2rem', backgroundColor: '#f7f9fc' }}>
-      <h1>🌤️ Big Fig Dricknick Tracker</h1>
-      <p>Forecast for Vasastan, Stockholm</p>
+    .approved {
+      color: #66ff99;
+    }
 
-      <div style={{
-        margin: '2rem 0',
-        padding: '1.5rem',
-        backgroundColor: tomorrowIsDricknick ? '#d4edda' : '#f8d7da',
-        color: tomorrowIsDricknick ? '#155724' : '#721c24',
-        fontSize: '2rem',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        borderRadius: '8px'
-      }}>
-        {tomorrowIsDricknick ? '🍻 YES! It’s Dricknick Time Tomorrow!' : '🚫 Nope. No Dricknick Tomorrow.'}
-      </div>
+    .denied {
+      color: #ff3333;
+    }
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-        {mockedForecast.map((day, index) => {
-          const adjustedTemp = getAdjustedTemp(day, index);
-          const highlight = isDricknickActivated(index);
+    .manipulate-btn {
+      margin-top: 0.5em;
+      padding: 0.5em 1em;
+      font-size: 0.9em;
+      border: 1px solid #770000;
+      background: #300000;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+    }
 
-          return (
-            <div key={day.date} style={{ border: '1px solid #ccc', padding: '1rem', borderRadius: '10px', backgroundColor: highlight ? '#fffae6' : '#fff' }}>
-              <h3>{day.date}</h3>
-              <p>🌡️ Max Temp: {adjustedTemp}°C</p>
-              <p>🌈 Weather: {day.weather}</p>
-              <button onClick={() => pumpTemp(index)} style={{ marginTop: '0.5rem' }}>Pump the Temp ☀️</button>
-              {highlight && (
-                <div style={{ marginTop: '1rem', backgroundColor: '#ffe08a', padding: '0.5rem', borderRadius: '6px' }}>
-                  🥳 <strong>Dricknick Activated!</strong><br/>
-                  📍 <em>17:00 at Koppartälten, Hagaparken</em>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+    footer {
+      margin-top: 5em;
+      font-size: 0.9em;
+      color: #888;
+      padding: 1em;
+      background: #111;
+      border-top: 1px dashed #8b0000;
+    }
+  </style>
+</head>
+<body>
+  <h1>☠ dricknick.death ☠</h1>
+  <p>Unholy weather predictions, forged in the fires of thirst and betrayal.</p>
+  <div class="forecast" id="forecast"></div>
+
+  <footer>
+    <p>A <strong>Big Fig Productions</strong> ritual of satire, desire, and dark picnic prophecy.</p>
+    <p>Forged in the pits of expired rosé and leftover kebab.</p>
+    <p>"Bring a blanket, bring your trauma." – Big Fig</p>
+  </footer>
+
+  <script>
+    const forecastContainer = document.getElementById('forecast');
+    const overrides = JSON.parse(localStorage.getItem('dricknickOverrides') || '{}');
+
+    // Mock 10-day forecast data
+    const mockForecast = [
+      { dt: Date.now(), temp: { max: 17 } },
+      { dt: Date.now() + 86400000, temp: { max: 22 } },
+      { dt: Date.now() + 2 * 86400000, temp: { max: 19 } },
+      { dt: Date.now() + 3 * 86400000, temp: { max: 21 } },
+      { dt: Date.now() + 4 * 86400000, temp: { max: 18 } },
+      { dt: Date.now() + 5 * 86400000, temp: { max: 23 } },
+      { dt: Date.now() + 6 * 86400000, temp: { max: 16 } },
+      { dt: Date.now() + 7 * 86400000, temp: { max: 20 } },
+      { dt: Date.now() + 8 * 86400000, temp: { max: 24 } },
+      { dt: Date.now() + 9 * 86400000, temp: { max: 15 } }
+    ];
+
+    function renderForecast(days) {
+      forecastContainer.innerHTML = '';
+      days.forEach((day, i) => {
+        const date = new Date(day.dt).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+        let temp = overrides[i] || Math.round(day.temp.max);
+        const approved = temp >= 20;
+
+        const dayEl = document.createElement('div');
+        dayEl.className = 'day';
+        dayEl.innerHTML = `
+          <h3>${date}</h3>
+          <div class="temp">${temp}°C</div>
+          <div class="status ${approved ? 'approved' : 'denied'}">
+            ${approved ? 'DRICKNICK APPROVED 🥂' : 'DENIED. TOO SOBER'}
+          </div>
+          ${!approved ? `<button class="manipulate-btn" onclick="manipulate(${i}, ${temp})">Push to 20°C</button>` : ''}
+        `;
+        forecastContainer.appendChild(dayEl);
+      });
+    }
+
+    function manipulate(index, currentTemp) {
+      overrides[index] = 20;
+      localStorage.setItem('dricknickOverrides', JSON.stringify(overrides));
+      renderForecast(mockForecast);
+    }
+
+    renderForecast(mockForecast);
+  </script>
+</body>
+</html>
