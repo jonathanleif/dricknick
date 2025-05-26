@@ -1,133 +1,82 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>dricknick.death</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
+// pages/index.js
 
-    body {
-      margin: 0;
-      font-family: 'Special Elite', monospace;
-      background: linear-gradient(180deg, #0d0d0d 0%, #1a1a1a 100%);
-      color: #dcdcdc;
-      text-align: center;
-      padding: 3em 1em;
-    }
+import React, { useState } from 'react';
 
-    h1 {
-      font-family: 'UnifrakturCook', cursive;
-      font-size: 4em;
-      color: #8b0000;
-      text-shadow: 2px 2px 4px #000000;
-    }
+const mockedForecast = [
+  { date: '2025-05-27', maxTemp: 21, weather: 'Sunny' },
+  { date: '2025-05-28', maxTemp: 18, weather: 'Cloudy' },
+  { date: '2025-05-29', maxTemp: 19, weather: 'Rain' },
+  { date: '2025-05-30', maxTemp: 20, weather: 'Sunny' },
+  { date: '2025-05-31', maxTemp: 17, weather: 'Overcast' },
+  { date: '2025-06-01', maxTemp: 22, weather: 'Sunny' },
+  { date: '2025-06-02', maxTemp: 23, weather: 'Sunny' },
+  { date: '2025-06-03', maxTemp: 18, weather: 'Cloudy' },
+  { date: '2025-06-04', maxTemp: 16, weather: 'Rain' },
+  { date: '2025-06-05', maxTemp: 20, weather: 'Sunny' },
+];
 
-    .sun-icon {
-      font-size: 6em;
-      margin-top: 0.2em;
-      animation: pulse 4s infinite;
-    }
+export default function Home() {
+  const [tempOverrides, setTempOverrides] = useState({});
 
-    @keyframes pulse {
-      0% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.1); opacity: 0.7; }
-      100% { transform: scale(1); opacity: 1; }
-    }
+  const pumpTemp = (index) => {
+    setTempOverrides((prev) => ({
+      ...prev,
+      [index]: (prev[index] || 0) + 1,
+    }));
+  };
 
-    .status {
-      margin-top: 1em;
-      font-size: 2em;
-      font-weight: bold;
-      color: #c41e3a;
-      background-color: rgba(255, 255, 255, 0.05);
-      padding: 1em;
-      border: 1px solid #333;
-      border-radius: 10px;
-      display: inline-block;
-    }
+  const getAdjustedTemp = (day, index) => {
+    return day.maxTemp + (tempOverrides[index] || 0);
+  };
 
-    .temp-box {
-      margin-top: 2em;
-      font-size: 4em;
-      color: #e25822;
-      text-shadow: 2px 2px 6px #000;
-    }
+  const isDricknickActivated = (index) => {
+    const adjustedTemp = getAdjustedTemp(mockedForecast[index], index);
+    return index === 1 && adjustedTemp >= 20;
+  };
 
-    .weather-embed {
-      margin-top: 3em;
-      padding: 1em;
-      border: 2px solid #444;
-      background: rgba(20, 20, 20, 0.85);
-      border-radius: 12px;
-      max-width: 700px;
-      margin-left: auto;
-      margin-right: auto;
-    }
+  const tomorrow = mockedForecast[1];
+  const adjustedTomorrowTemp = getAdjustedTemp(tomorrow, 1);
+  const tomorrowIsDricknick = adjustedTomorrowTemp >= 20;
 
-    .weather-embed h2 {
-      color: #bbbbbb;
-      font-size: 1.5em;
-      margin-bottom: 0.3em;
-    }
+  return (
+    <div style={{ fontFamily: 'sans-serif', padding: '2rem', backgroundColor: '#f7f9fc' }}>
+      <h1>🌤️ Big Fig Dricknick Tracker</h1>
+      <p>Forecast for Vasastan, Stockholm</p>
 
-    .weather-embed iframe {
-      width: 100%;
-      height: 300px;
-      border: none;
-      filter: grayscale(0.9) contrast(1.5) brightness(0.8);
-      border-radius: 8px;
-    }
+      <div style={{
+        margin: '2rem 0',
+        padding: '1.5rem',
+        backgroundColor: tomorrowIsDricknick ? '#d4edda' : '#f8d7da',
+        color: tomorrowIsDricknick ? '#155724' : '#721c24',
+        fontSize: '2rem',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        borderRadius: '8px'
+      }}>
+        {tomorrowIsDricknick ? '🍻 YES! It’s Dricknick Time Tomorrow!' : '🚫 Nope. No Dricknick Tomorrow.'}
+      </div>
 
-    footer {
-      margin-top: 5em;
-      font-size: 0.9em;
-      color: #888;
-      padding: 1em;
-      background: #111;
-      border-top: 1px dashed #8b0000;
-    }
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+        {mockedForecast.map((day, index) => {
+          const adjustedTemp = getAdjustedTemp(day, index);
+          const highlight = isDricknickActivated(index);
 
-    .sacrifice-btn {
-      background: #300000;
-      color: #fff;
-      border: 1px solid #770000;
-      padding: 0.7em 2em;
-      font-size: 1.2em;
-      margin-top: 2em;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .sacrifice-btn:hover {
-      background: #550000;
-      transform: scale(1.05);
-    }
-  </style>
-</head>
-<body>
-  <h1>☠ dricknick.death ☠</h1>
-  <div class="sun-icon">🌑</div>
-  <div class="temp-box">"20°C"</div>
-  <div class="status">YES. DRINKNIC TOMORROW. YOUR DESTINY IS SEALED.</div>
-
-  <button class="sacrifice-btn" onclick="alert('You have sacrificed a lukewarm beer to the gods of inaccurate forecasting. They are... amused.')">
-    Sacrifice a beer
-  </button>
-
-  <div class="weather-embed">
-    <h2>Dark forecast (from something NOT SMHI)</h2>
-    <p>Because SMHI is a lie and this site tells only painful truths.</p>
-    <iframe src="https://forecast7.com/en/59d337e58d4/stockholm/" title="Weather Widget"></iframe>
-    <p><small>Weather accuracy is a capitalist construct. Trust your thirst.</small></p>
-  </div>
-
-  <footer>
-    <p>A <strong>Big Fig Productions</strong> ritual of satire, desire, and dark picnic prophecy.</p>
-    <p>Forged in the pits of expired rosé and leftover kebab.</p>
-    <p>"Bring a blanket, bring your trauma." – Big Fig</p>
-  </footer>
-</body>
-</html>
+          return (
+            <div key={day.date} style={{ border: '1px solid #ccc', padding: '1rem', borderRadius: '10px', backgroundColor: highlight ? '#fffae6' : '#fff' }}>
+              <h3>{day.date}</h3>
+              <p>🌡️ Max Temp: {adjustedTemp}°C</p>
+              <p>🌈 Weather: {day.weather}</p>
+              <button onClick={() => pumpTemp(index)} style={{ marginTop: '0.5rem' }}>Pump the Temp ☀️</button>
+              {highlight && (
+                <div style={{ marginTop: '1rem', backgroundColor: '#ffe08a', padding: '0.5rem', borderRadius: '6px' }}>
+                  🥳 <strong>Dricknick Activated!</strong><br/>
+                  📍 <em>17:00 at Koppartälten, Hagaparken</em>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
