@@ -1,146 +1,1299 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sv">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>dricknick.death</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>dricknick.death // v2 — den ohelga orakeln</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Creepster&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blood: #c8102e;
+    --blood-deep: #7a0a1c;
+    --blood-glow: #ff2a42;
+    --bone: #e8dcc4;
+    --bone-dim: #a89a80;
+    --void: #08070a;
+    --void-2: #12101a;
+    --void-3: #1a1822;
+    --approved: #4ade80;
+    --approved-glow: #86efac;
+    --denied: #c8102e;
+  }
 
-    body {
-      margin: 0;
-      font-family: 'Special Elite', monospace;
-      background: linear-gradient(180deg, #0d0d0d 0%, #1a1a1a 100%);
-      color: #dcdcdc;
-      text-align: center;
-      padding: 3em 1em;
-    }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    h1 {
-      font-family: 'UnifrakturCook', cursive;
-      font-size: 4em;
-      color: #8b0000;
-      text-shadow: 2px 2px 4px #000000;
-    }
+  html, body {
+    background: var(--void);
+    color: var(--bone);
+    font-family: 'IBM Plex Mono', monospace;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
 
-    .forecast {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5em;
-      margin-top: 3em;
-    }
+  /* Grain + vignette overlay */
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.35 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: 0.18;
+    mix-blend-mode: overlay;
+    z-index: 1000;
+  }
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
+    z-index: 999;
+  }
 
-    .day {
-      background: rgba(30, 30, 30, 0.8);
-      border: 2px solid #333;
-      border-radius: 12px;
-      padding: 1em;
-      text-align: center;
-    }
+  /* Flickering candle-light behind the logo */
+  .candlelight {
+    position: fixed;
+    top: -10vh; left: 50%;
+    transform: translateX(-50%);
+    width: 120vw; height: 60vh;
+    background: radial-gradient(ellipse at center top, rgba(200,16,46,0.18), transparent 60%);
+    pointer-events: none;
+    animation: flicker 4s infinite;
+    z-index: 0;
+  }
+  @keyframes flicker {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+    55% { opacity: 0.7; }
+    60% { opacity: 1; }
+  }
 
-    .day h3 {
-      margin: 0.3em 0;
-      font-size: 1.3em;
-      color: #ff6666;
-    }
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    position: relative;
+    z-index: 2;
+  }
 
-    .temp {
-      font-size: 2em;
-      color: #e25822;
-    }
+  /* === HEADER === */
+  header {
+    text-align: center;
+    padding: 3rem 0 2rem;
+    position: relative;
+  }
 
-    .status {
-      margin-top: 0.5em;
-      font-weight: bold;
-    }
+  .skull-row {
+    font-size: 1.5rem;
+    color: var(--blood);
+    letter-spacing: 0.5rem;
+    animation: sway 6s ease-in-out infinite;
+  }
+  @keyframes sway {
+    0%, 100% { transform: translateX(-4px); }
+    50% { transform: translateX(4px); }
+  }
 
-    .approved {
-      color: #66ff99;
-    }
+  h1 {
+    font-family: 'Creepster', cursive;
+    font-size: clamp(3rem, 9vw, 7rem);
+    color: var(--blood);
+    letter-spacing: 0.05em;
+    line-height: 1;
+    margin: 0.5rem 0;
+    text-shadow:
+      0 0 12px rgba(200, 16, 46, 0.5),
+      0 0 40px rgba(200, 16, 46, 0.2),
+      2px 2px 0 var(--void);
+    font-weight: 400;
+  }
+  h1 .dot {
+    color: var(--bone);
+    display: inline-block;
+    transform: translateY(-0.1em);
+  }
 
-    .denied {
-      color: #ff3333;
-    }
+  .tagline {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--bone-dim);
+    margin-top: 0.5rem;
+    letter-spacing: 0.02em;
+  }
 
-    .manipulate-btn {
-      margin-top: 0.5em;
-      padding: 0.5em 1em;
-      font-size: 0.9em;
-      border: 1px solid #770000;
-      background: #300000;
-      color: #fff;
-      border-radius: 6px;
-      cursor: pointer;
-    }
+  .divider {
+    max-width: 200px;
+    margin: 2rem auto;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--blood), transparent);
+  }
 
-    footer {
-      margin-top: 5em;
-      font-size: 0.9em;
-      color: #888;
-      padding: 1em;
-      background: #111;
-      border-top: 1px dashed #8b0000;
-    }
-  </style>
+  /* === CONTROLS BAR === */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
+    margin: 2rem 0;
+    padding: 1rem 1.5rem;
+    background: rgba(18, 16, 26, 0.6);
+    border: 1px solid rgba(200, 16, 46, 0.15);
+    border-radius: 2px;
+    backdrop-filter: blur(8px);
+  }
+
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--bone-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .control-group select, .control-group input {
+    background: var(--void);
+    color: var(--bone);
+    border: 1px solid rgba(200, 16, 46, 0.3);
+    padding: 0.5rem 0.75rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .control-group select:hover, .control-group input:hover {
+    border-color: var(--blood);
+    box-shadow: 0 0 10px rgba(200,16,46,0.3);
+  }
+
+  .toggle {
+    background: var(--void);
+    color: var(--bone-dim);
+    border: 1px solid rgba(200, 16, 46, 0.3);
+    padding: 0.5rem 1rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .toggle:hover { border-color: var(--blood); color: var(--bone); }
+  .toggle.active { color: var(--approved); border-color: var(--approved); }
+
+  /* === COUNTDOWN === */
+  .countdown {
+    text-align: center;
+    margin: 2rem 0 3rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+  }
+  .countdown .label {
+    color: var(--bone-dim);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    font-family: 'IBM Plex Mono', monospace;
+    font-style: normal;
+    margin-bottom: 0.5rem;
+  }
+  .countdown .time {
+    font-size: 2.5rem;
+    color: var(--blood);
+    font-weight: 400;
+  }
+  .countdown .time .num {
+    color: var(--bone);
+    font-family: 'Creepster', cursive;
+    font-style: normal;
+    margin: 0 0.25rem;
+  }
+
+  /* === TODAY HERO === */
+  .today-hero {
+    position: relative;
+    padding: 3rem 2rem;
+    margin-bottom: 3rem;
+    border: 1px solid var(--blood-deep);
+    background:
+      radial-gradient(ellipse at top left, rgba(200,16,46,0.15), transparent 60%),
+      radial-gradient(ellipse at bottom right, rgba(122,10,28,0.2), transparent 60%),
+      var(--void-2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .today-hero::before {
+    content: "ORAKELN SÄGER";
+    position: absolute;
+    top: 1rem; left: 1.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.4em;
+    color: var(--blood);
+    opacity: 0.6;
+  }
+  .today-hero::after {
+    content: "//" attr(data-city);
+    position: absolute;
+    top: 1rem; right: 1.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--blood);
+    opacity: 0.6;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 2rem;
+    align-items: center;
+    margin-top: 1.5rem;
+  }
+  @media (max-width: 700px) {
+    .hero-grid { grid-template-columns: 1fr; }
+  }
+
+  .hero-temp {
+    text-align: center;
+  }
+  .hero-temp .date {
+    font-size: 1rem;
+    color: var(--bone-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+  }
+  .hero-temp .temp {
+    font-family: 'Creepster', cursive;
+    font-size: clamp(4rem, 12vw, 8rem);
+    color: var(--bone);
+    line-height: 1;
+    margin: 0.5rem 0;
+    text-shadow: 0 0 20px rgba(232,220,196,0.3);
+  }
+  .hero-temp .score {
+    font-size: 0.8rem;
+    color: var(--blood);
+    letter-spacing: 0.2em;
+  }
+
+  .hero-verdict {
+    padding-left: 1rem;
+    border-left: 1px solid rgba(200,16,46,0.3);
+  }
+  @media (max-width: 700px) {
+    .hero-verdict { border-left: none; padding-left: 0; border-top: 1px solid rgba(200,16,46,0.3); padding-top: 1.5rem; }
+  }
+
+  .hero-verdict .status {
+    font-family: 'Creepster', cursive;
+    font-size: 2.5rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+  }
+  .hero-verdict.denied .status { color: var(--denied); }
+  .hero-verdict.approved .status { color: var(--approved); text-shadow: 0 0 20px rgba(74,222,128,0.4); }
+
+  .hero-verdict .oracle-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--bone);
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+    min-height: 3.5rem;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    background: transparent;
+    color: var(--blood);
+    border: 1px solid var(--blood);
+    padding: 0.75rem 1.25rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn:hover {
+    background: var(--blood);
+    color: var(--void);
+    box-shadow: 0 0 20px rgba(200,16,46,0.5);
+  }
+  .btn.primary {
+    background: var(--blood);
+    color: var(--void);
+  }
+  .btn.primary:hover {
+    background: var(--blood-glow);
+  }
+  .btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* === WEEK GRID === */
+  .section-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4em;
+    color: var(--blood);
+    margin: 2rem 0 1rem;
+    text-align: center;
+  }
+
+  .week-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .day-card {
+    position: relative;
+    background: var(--void-2);
+    border: 1px solid rgba(200, 16, 46, 0.15);
+    padding: 1.25rem;
+    border-radius: 2px;
+    transition: all 0.3s;
+    overflow: hidden;
+  }
+  .day-card:hover {
+    border-color: var(--blood);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(200,16,46,0.2);
+  }
+  .day-card.approved {
+    border-color: rgba(74,222,128,0.4);
+    background: linear-gradient(180deg, rgba(74,222,128,0.05), var(--void-2));
+  }
+  .day-card.weekend::before {
+    content: "WEEKEND";
+    position: absolute;
+    top: 0.5rem; right: 0.5rem;
+    font-size: 0.55rem;
+    color: var(--blood);
+    letter-spacing: 0.2em;
+    opacity: 0.6;
+  }
+
+  .day-card .day-name {
+    font-size: 0.85rem;
+    color: var(--blood);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    text-align: center;
+  }
+  .day-card.approved .day-name { color: var(--approved); }
+
+  .day-card .temp {
+    font-family: 'Creepster', cursive;
+    font-size: 2.5rem;
+    color: var(--bone);
+    text-align: center;
+    line-height: 1;
+    margin: 0.5rem 0;
+  }
+
+  .day-card .meta {
+    display: flex;
+    justify-content: space-around;
+    font-size: 0.7rem;
+    color: var(--bone-dim);
+    margin: 0.5rem 0;
+  }
+  .day-card .meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .day-card .verdict {
+    text-align: center;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    margin: 0.75rem 0 0.5rem;
+    font-weight: 500;
+    min-height: 1em;
+  }
+  .day-card.denied .verdict { color: var(--denied); }
+  .day-card.approved .verdict { color: var(--approved); }
+
+  .day-card .score-bar {
+    height: 3px;
+    background: var(--void-3);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+  }
+  .day-card .score-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blood-deep), var(--blood));
+    transition: width 0.6s ease;
+  }
+  .day-card.approved .score-bar-fill {
+    background: linear-gradient(90deg, var(--approved), var(--approved-glow));
+  }
+
+  .day-card .push-btn {
+    width: 100%;
+    background: var(--blood-deep);
+    color: var(--bone);
+    border: none;
+    padding: 0.5rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .day-card .push-btn:hover {
+    background: var(--blood);
+    box-shadow: 0 0 15px rgba(200,16,46,0.5);
+  }
+  .day-card.approved .push-btn {
+    display: none;
+  }
+  .day-card .approved-badge {
+    display: none;
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--approved);
+    letter-spacing: 0.15em;
+    padding: 0.5rem;
+  }
+  .day-card.approved .approved-badge {
+    display: block;
+  }
+
+  /* === RITUAL ANIMATION === */
+  @keyframes ritualShake {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-4px, 2px); }
+    20% { transform: translate(4px, -2px); }
+    30% { transform: translate(-3px, 1px); }
+    40% { transform: translate(3px, -1px); }
+    50% { transform: translate(-2px, 2px); }
+    60% { transform: translate(2px, -2px); }
+    70% { transform: translate(-1px, 1px); }
+    80% { transform: translate(1px, -1px); }
+    90% { transform: translate(0, 0); }
+  }
+  .ritualing { animation: ritualShake 0.6s; }
+
+  @keyframes flashRed {
+    0%, 100% { background: var(--void-2); }
+    50% { background: rgba(200,16,46,0.3); }
+  }
+  .flashing { animation: flashRed 0.3s 3; }
+
+  /* === FOOTER === */
+  footer {
+    margin-top: 4rem;
+    padding: 3rem 1.5rem 2rem;
+    text-align: center;
+    border-top: 1px dashed rgba(200,16,46,0.3);
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    color: var(--bone-dim);
+    line-height: 1.9;
+  }
+  footer strong {
+    color: var(--blood);
+    font-family: 'Creepster', cursive;
+    font-style: normal;
+    letter-spacing: 0.05em;
+  }
+  .lore {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    min-height: 1.5em;
+    transition: opacity 0.5s;
+  }
+  .rules-btn {
+    margin-top: 1.5rem;
+    background: transparent;
+    color: var(--bone-dim);
+    border: 1px solid rgba(200,16,46,0.3);
+    padding: 0.4rem 1rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .rules-btn:hover { color: var(--blood); border-color: var(--blood); }
+
+  /* === MODAL === */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(8,7,10,0.85);
+    backdrop-filter: blur(10px);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    max-width: 600px;
+    width: 100%;
+    background: var(--void-2);
+    border: 1px solid var(--blood);
+    padding: 2.5rem;
+    border-radius: 2px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 0 60px rgba(200,16,46,0.3);
+  }
+  .modal h2 {
+    font-family: 'Creepster', cursive;
+    color: var(--blood);
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  .modal ol {
+    color: var(--bone);
+    padding-left: 1.5rem;
+    line-height: 1.8;
+  }
+  .modal li { margin-bottom: 0.75rem; font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; }
+  .modal li strong { font-family: 'IBM Plex Mono', monospace; color: var(--blood); text-transform: uppercase; font-size: 0.85rem; }
+  .modal-close {
+    display: block;
+    margin: 2rem auto 0;
+  }
+
+  /* === TOAST === */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--void-2);
+    border: 1px solid var(--approved);
+    color: var(--approved);
+    padding: 1rem 1.5rem;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    opacity: 0;
+    transition: all 0.4s;
+    z-index: 3000;
+    box-shadow: 0 0 30px rgba(74,222,128,0.3);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Loading state */
+  .loading { opacity: 0.4; }
+  .skeleton {
+    background: linear-gradient(90deg, var(--void-2), var(--void-3), var(--void-2));
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    color: transparent !important;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+</style>
 </head>
 <body>
-  <h1>☠ dricknick.death ☠</h1>
-  <p>Unholy weather predictions, forged in the fires of thirst and betrayal.</p>
-  <div class="forecast" id="forecast"></div>
 
+<div class="candlelight"></div>
+
+<div class="container">
+
+  <header>
+    <div class="skull-row">☠ ✟ ☠</div>
+    <h1>dricknick<span class="dot">.</span>death</h1>
+    <p class="tagline">Ohelga väderprofetior, smidda i törstens och sveket eldar.</p>
+  </header>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="control-group">
+      <label for="city">ORT:</label>
+      <select id="city">
+        <option value="59.3293,18.0686,Stockholm">Stockholm</option>
+        <option value="57.7089,11.9746,Göteborg">Göteborg</option>
+        <option value="55.6050,13.0038,Malmö">Malmö</option>
+        <option value="59.8586,17.6389,Uppsala">Uppsala</option>
+        <option value="58.4108,15.6214,Linköping">Linköping</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="threshold">TRÖSKEL:</label>
+      <select id="threshold">
+        <option value="18">18°C — för svagharts</option>
+        <option value="20" selected>20°C — klassikern</option>
+        <option value="22">22°C — puritan</option>
+        <option value="25">25°C — sadist</option>
+      </select>
+    </div>
+    <button class="toggle" id="soundToggle">🔇 LJUD AV</button>
+    <button class="toggle" id="resetBtn" title="Rensa alla forcerade dagar">♻ ÅNGER</button>
+  </div>
+
+  <!-- COUNTDOWN -->
+  <div class="countdown">
+    <div class="label">Tid kvar till fredag</div>
+    <div class="time" id="countdown">
+      <span class="num">--</span>d
+      <span class="num">--</span>h
+      <span class="num">--</span>m
+    </div>
+  </div>
+
+  <!-- TODAY HERO -->
+  <div class="today-hero" id="todayHero" data-city="STOCKHOLM">
+    <div class="hero-grid">
+      <div class="hero-temp">
+        <div class="date" id="heroDate">Laddar profetian…</div>
+        <div class="temp" id="heroTemp">--°</div>
+        <div class="score">DRICKNICK-INDEX <span id="heroScore">--</span>/100</div>
+      </div>
+      <div class="hero-verdict" id="heroVerdict">
+        <div class="status" id="heroStatus">KONSULTERAR ORAKEL…</div>
+        <div class="oracle-text" id="heroOracle">Tarotkorten brinner. Vänta.</div>
+        <div class="hero-actions">
+          <button class="btn primary" id="heroPush">🔥 FORCERA PROFETIAN</button>
+          <button class="btn" id="heroShare">📋 DELA VERDIKT</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK GRID -->
+  <div class="section-label">◆ DE FÖLJANDE DAGARNA ◆</div>
+  <div class="week-grid" id="weekGrid">
+    <!-- populated by JS -->
+  </div>
+
+  <!-- FOOTER -->
   <footer>
-    <p>A <strong>Big Fig Productions</strong> ritual of satire, desire, and dark picnic prophecy.</p>
-    <p>Forged in the pits of expired rosé and leftover kebab.</p>
-    <p>"Bring a blanket, bring your trauma." – Big Fig</p>
+    En <strong>Big Fig Productions</strong>-ritual av satir, begär och mörk picknickprofetia.<br>
+    Smidd i gropen av för gammalt rosé och kall kebab.<br>
+    <span class="lore" id="lore">"Ta med filten, ta med traumat." — Big Fig</span>
+    <div>
+      <button class="rules-btn" id="rulesBtn">◆ DRICKNICKENS REGLER ◆</button>
+    </div>
   </footer>
 
-  <script>
-    const forecastContainer = document.getElementById('forecast');
-    const overrides = JSON.parse(localStorage.getItem('dricknickOverrides') || '{}');
+</div>
 
-    // Mock 10-day forecast data
-    const mockForecast = [
-      { dt: Date.now(), temp: { max: 17 } },
-      { dt: Date.now() + 86400000, temp: { max: 22 } },
-      { dt: Date.now() + 2 * 86400000, temp: { max: 19 } },
-      { dt: Date.now() + 3 * 86400000, temp: { max: 21 } },
-      { dt: Date.now() + 4 * 86400000, temp: { max: 18 } },
-      { dt: Date.now() + 5 * 86400000, temp: { max: 23 } },
-      { dt: Date.now() + 6 * 86400000, temp: { max: 16 } },
-      { dt: Date.now() + 7 * 86400000, temp: { max: 20 } },
-      { dt: Date.now() + 8 * 86400000, temp: { max: 24 } },
-      { dt: Date.now() + 9 * 86400000, temp: { max: 15 } }
-    ];
+<!-- RULES MODAL -->
+<div class="modal-overlay" id="rulesModal">
+  <div class="modal">
+    <h2>Dricknickens Regler</h2>
+    <ol>
+      <li><strong>Regel I:</strong> Temperaturen måste överstiga den heliga tröskeln. Annars dricker du ensam, och det räknas som ett tecken.</li>
+      <li><strong>Regel II:</strong> En forcerad profetia är bindande. Orakeln ser allt. Även det du gjorde i augusti.</li>
+      <li><strong>Regel III:</strong> Regn är ingen ursäkt. Vind är ingen ursäkt. Måndag är en ursäkt.</li>
+      <li><strong>Regel IV:</strong> Den som först öppnar vinet står för nästa flaska. Detta är fysikens lag.</li>
+      <li><strong>Regel V:</strong> Det som händer på dricknicken stannar på dricknicken, med undantag för det som hamnar i gruppchatten före tisdag.</li>
+      <li><strong>Regel VI:</strong> Filten är icke förhandlingsbar. Filten är artistens verk.</li>
+      <li><strong>Regel VII:</strong> Om någon citerar Bellman utan tillstånd avslutas dricknicken omedelbart.</li>
+    </ol>
+    <button class="btn modal-close" id="modalClose">STÄNG</button>
+  </div>
+</div>
 
-    function renderForecast(days) {
-      forecastContainer.innerHTML = '';
-      days.forEach((day, i) => {
-        const date = new Date(day.dt).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-        let temp = overrides[i] || Math.round(day.temp.max);
-        const approved = temp >= 20;
+<div class="toast" id="toast">KOPIERAT TILL MINNET</div>
 
-        const dayEl = document.createElement('div');
-        dayEl.className = 'day';
-        dayEl.innerHTML = `
-          <h3>${date}</h3>
-          <div class="temp">${temp}°C</div>
-          <div class="status ${approved ? 'approved' : 'denied'}">
-            ${approved ? 'DRICKNICK APPROVED 🥂' : 'DENIED. TOO SOBER'}
-          </div>
-          ${!approved ? `<button class="manipulate-btn" onclick="manipulate(${i}, ${temp})">Push to 20°C</button>` : ''}
-        `;
-        forecastContainer.appendChild(dayEl);
-      });
+<script>
+// =====================================================
+// DRICKNICK.DEATH v2 — the unholy oracle
+// =====================================================
+
+// ---- state ----
+const state = {
+  city: { lat: 59.3293, lon: 18.0686, name: 'Stockholm' },
+  threshold: 20,
+  forced: new Set(JSON.parse(localStorage.getItem('dricknick.forced') || '[]')),
+  soundOn: false,
+  audio: null,
+  days: [], // [{date, temp, rain, wind, score, verdict, oracle}]
+};
+
+// ---- ORACLE POOLS ----
+// Kontextuella rader. Varje pool matchar ett specifikt tillstånd.
+// Generatorn väljer från poolerna baserat på temp, regn, vind, veckodag, forcering.
+
+// Kalla avslag (temp långt under tröskeln, < -5°C från tröskel)
+const DENIED_COLD = [
+  "För kallt. Även änglarna har på sig fleece.",
+  "Temperaturen motsvarar din senaste relation. Kall.",
+  "Systembolaget gråter tyst. Det gör du också.",
+  "Detta är inte dricknickväder. Detta är soppväder.",
+  "Rosén skulle frysa i glaset. Så även ditt hopp.",
+  "Gå hem. Tänd ett ljus. Ring din mamma.",
+  "Orakeln skakar på huvudet. Du skakar av kyla.",
+  "Picknicken är uppskjuten till en varmare tidslinje.",
+  "Filten räcker inte. Varken för kroppen eller själen.",
+  "Det är kallt som i Bellmans sista strof.",
+  "Drick te. Läs Strindberg. Gråt lagom.",
+];
+
+// Nära-tröskeln-avslag (temp strax under tröskeln)
+const DENIED_CLOSE = [
+  "Nästan. Men oraklet är en bokstavstroende.",
+  "En grad till och allt hade varit annorlunda. Som alltid.",
+  "Så nära att det nästan gör ont. Som mycket annat.",
+  "Tröskeln skrattar i ditt ansikte med ett leende.",
+  "Profetian säger nej, men med tveksamhet.",
+  "Väntan är en del av ritualen. Stå ut.",
+  "Termometern är en sadist idag. Acceptera det.",
+  "Du hör rosén viska, men hon släpper inte in dig.",
+  "Gudarna testar ditt tålamod. De vinner.",
+];
+
+// Regniga avslag (regn > 5mm, temp under tröskel)
+const DENIED_RAIN = [
+  "Himlen gråter. Det är inte åt dig, men det hjälper inte.",
+  "Regn och kyla. Dubbel nekning. Gå hem.",
+  "Filten blir våt. Traumat också.",
+  "Picknicken drunknar innan den börjat.",
+  "Detta är inte väder. Detta är en varning.",
+  "Molnen dricker åt dig idag. De har förtjänat det.",
+  "Droppar faller. Planerna faller. Du faller.",
+];
+
+// Blåsiga avslag (vind > 25 km/h, temp under tröskel)
+const DENIED_WIND = [
+  "Vinden tar din filt, din hatt och ditt självförtroende.",
+  "Det blåser snålare än din ex-sambo. Nekas.",
+  "Glaset välter innan du hinner skåla. Dålig prognos.",
+  "Stormen viskar nej. Lyssna en gång.",
+];
+
+// Måndagsavslag (måndag + nekad)
+const DENIED_MONDAY = [
+  "Måndag. Ingen ursäkt behövs. Nekas reflexmässigt.",
+  "Det är måndag. Till och med godkända dagar nekas idag.",
+  "Veckan har precis börjat. Visa lite värdighet.",
+];
+
+// Generella avslag (för allt annat)
+const DENIED_GENERIC = [
+  "Orakelns glas är halvtomt. Det är ditt också.",
+  "Dricknicken är uppskjuten. Precis som din terapi.",
+  "Profetian viskar: kamomillte. Och skam.",
+  "Gudarna gråter rosé, men inte åt dig.",
+  "Nej. Men du kan alltid försöka igen imorgon.",
+  "Tröskeln är inte förhandlingsbar. Det är lagen.",
+  "Orakeln har talat. Det var inte det du ville höra.",
+];
+
+// Varma godkännanden (temp rejält över tröskel, > +5°C från tröskel)
+const APPROVED_HOT = [
+  "Solen välsignar din törst. Bär den med värdighet.",
+  "Detta är en heldag. Kostan tillåts flyta.",
+  "Temperaturen har talat. Hon skriker ja.",
+  "Hettan kräver rosé. Du lyder naturen.",
+  "Varmare än Bellmans fantasi. Drick därefter.",
+  "Idag smälter isen. Även den i dina blickar.",
+  "Gräset är hett. Filten är tunn. Livet är bra.",
+  "Svettas med stolthet. Drick med andakt.",
+];
+
+// Perfekta godkännanden (temp strax över tröskel)
+const APPROVED_PERFECT = [
+  "Exakt rätt. Orakeln nickar sakta och drar fram korken.",
+  "Detta är den temperatur som Bellman skrev om.",
+  "Precis på gränsen till himmel. Du klarade det.",
+  "Tröskeln passerad. Ritualen får börja.",
+  "Det är dricknickväder. Inget annat behöver sägas.",
+  "Gudarna har levererat. Din tur att göra detsamma.",
+  "En perfekt dag. Förstör den inte med eftertanke.",
+];
+
+// Fredag godkänd
+const APPROVED_FRIDAY = [
+  "Fredag och väder. Veckans heliga treenighet minus en.",
+  "Det är fredag. Det är varmt. Inget kan stoppa detta.",
+  "Fredagens profetia är bindande. Systembolaget väntar.",
+  "Veckan slutar som den ska: med öppen kork.",
+];
+
+// Helg godkänd
+const APPROVED_WEEKEND = [
+  "Helg och värme. Gudarna vilar, men det gör inte du.",
+  "Detta är vad helgen är gjord för. Följ instruktionerna.",
+  "Ingen deadline, ingen ursäkt, bara dricknick.",
+];
+
+// Lite regn men godkänd (temp över tröskel, regn 1-5mm)
+const APPROVED_DRIZZLE = [
+  "Lite regn. Värme nog. Svenska förhållanden.",
+  "Duggregn är inget regn. Det är stämning.",
+  "Molnen fuktar marken. Du fuktar strupen.",
+  "Vattnet faller uppifrån och nedifrån. Balans.",
+];
+
+// Forcerade profetior (när användaren tvingat dagen)
+const FORCED_LINES = [
+  "Profetian är forcerad. Orakeln fnyser, men godkänner.",
+  "Du har böjt verkligheten. Du får leva med det.",
+  "Tröskeln är överskriden genom ren viljekraft.",
+  "Ritualen är fullbordad med våld. Drick med skuld.",
+  "Orakeln ser dig. Orakeln dömer dig. Men säger ja.",
+  "Du forcerade profetian. Nu är du en del av mörkret.",
+  "Godkänt med anmärkning. Anmärkningen är du.",
+  "Verkligheten är omförhandlad. Rosén lider inte.",
+  "Du köpte dig fri. Det funkar varje gång.",
+  "Gudarna suckar men lyfter inte förbudet. Drick.",
+];
+
+// ---- lore rotation ----
+const LORE_LINES = [
+  "\"Ta med filten, ta med traumat.\" — Big Fig",
+  "\"Den som delar rosé delar också demoner.\" — Big Fig",
+  "\"Picknicken är ett tillstånd i själen, inte en plats i parken.\" — Big Fig",
+  "\"Det finns inget dåligt väder, bara dåliga ursäkter.\" — Big Fig",
+  "\"Vinet är bara en förevändning. Samtalet är ritualen.\" — Big Fig",
+  "\"Gräsfläckarna är medaljer.\" — Big Fig",
+];
+
+// =====================================================
+// UTILITY
+// =====================================================
+
+const SV_DAYS = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
+const SV_MONTHS = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+
+function fmtDate(dateStr) {
+  const d = new Date(dateStr);
+  return `${SV_DAYS[d.getDay()]} ${d.getDate()} ${SV_MONTHS[d.getMonth()]}`;
+}
+function fmtFullDate(dateStr) {
+  const d = new Date(dateStr);
+  return `${SV_DAYS[d.getDay()]}DAG ${d.getDate()} ${SV_MONTHS[d.getMonth()].toUpperCase()}`;
+}
+function isWeekend(dateStr) {
+  const dow = new Date(dateStr).getDay();
+  return dow === 5 || dow === 6 || dow === 0;
+}
+function dayKey(dateStr) { return dateStr; }
+
+// Compute Dricknick Score (0-100)
+function computeScore(temp, rain, wind, dateStr) {
+  let score = 0;
+  // Temperature is king (0-60 points)
+  score += Math.max(0, Math.min(60, (temp - 5) * 2.5));
+  // Rain penalty (0-25 subtracted)
+  score -= Math.min(25, rain * 2);
+  // Wind penalty
+  score -= Math.min(15, Math.max(0, wind - 5));
+  // Day bonus
+  const dow = new Date(dateStr).getDay();
+  if (dow === 5) score += 10; // Friday
+  if (dow === 6) score += 8;  // Saturday
+  if (dow === 0) score += 5;  // Sunday
+  if (dow === 1) score -= 5;  // Monday penalty
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+// =====================================================
+// WEATHER FETCH (Open-Meteo, no API key)
+// =====================================================
+
+async function fetchWeather() {
+  const { lat, lon } = state.city;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,precipitation_sum,windspeed_10m_max&timezone=Europe/Stockholm&forecast_days=10`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Oraklet sover.');
+    const data = await res.json();
+    const days = [];
+    for (let i = 0; i < data.daily.time.length; i++) {
+      const date = data.daily.time[i];
+      const temp = Math.round(data.daily.temperature_2m_max[i]);
+      const rain = data.daily.precipitation_sum[i] || 0;
+      const wind = data.daily.windspeed_10m_max[i] || 0;
+      const score = computeScore(temp, rain, wind, date);
+      days.push({ date, temp, rain, wind, score, forced: state.forced.has(date), oracle: null });
     }
+    return days;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
 
-    function manipulate(index, currentTemp) {
-      overrides[index] = 20;
-      localStorage.setItem('dricknickOverrides', JSON.stringify(overrides));
-      renderForecast(mockForecast);
+// =====================================================
+// ORACLE (kontextuell, ingen API — helt offline)
+// =====================================================
+
+// Deterministisk hash av en sträng → 0..1
+// Gör att samma dag+tillstånd ger samma rad (tills forcering ändras).
+function seedFromString(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 100000) / 100000;
+}
+
+function pickFromPool(pool, seed) {
+  return pool[Math.floor(seed * pool.length) % pool.length];
+}
+
+function generateOracle(day) {
+  const passing = day.forced || day.temp >= state.threshold;
+  const diff = day.temp - state.threshold;
+  const dow = new Date(day.date).getDay();
+  const seed = seedFromString(day.date + ':' + state.threshold + ':' + (day.forced ? 'F' : 'N'));
+
+  // FORCERAD har alltid sin egen pool
+  if (day.forced) {
+    return pickFromPool(FORCED_LINES, seed);
+  }
+
+  // NEKAD — välj pool efter orsak (prioritetsordning)
+  if (!passing) {
+    if (day.rain > 5) return pickFromPool(DENIED_RAIN, seed);
+    if (day.wind > 25) return pickFromPool(DENIED_WIND, seed);
+    if (dow === 1 && seed < 0.4) return pickFromPool(DENIED_MONDAY, seed);
+    if (diff <= -5) return pickFromPool(DENIED_COLD, seed);
+    if (diff >= -2) return pickFromPool(DENIED_CLOSE, seed);
+    return pickFromPool(DENIED_GENERIC, seed);
+  }
+
+  // GODKÄND — välj pool efter karaktär
+  if (dow === 5 && seed < 0.5) return pickFromPool(APPROVED_FRIDAY, seed);
+  if ((dow === 6 || dow === 0) && seed < 0.4) return pickFromPool(APPROVED_WEEKEND, seed);
+  if (day.rain >= 1 && day.rain <= 5) return pickFromPool(APPROVED_DRIZZLE, seed);
+  if (diff >= 5) return pickFromPool(APPROVED_HOT, seed);
+  return pickFromPool(APPROVED_PERFECT, seed);
+}
+
+// =====================================================
+// RENDER
+// =====================================================
+
+function verdictText(day) {
+  const passing = day.forced || day.temp >= state.threshold;
+  if (day.forced) return 'FORCERAD ✦ DRICKNICK';
+  return passing ? 'DRICKNICK GODKÄND ☽' : 'NEKAD. FÖR NYKTER';
+}
+
+function renderHero(day) {
+  const hero = document.getElementById('todayHero');
+  hero.setAttribute('data-city', state.city.name.toUpperCase());
+  document.getElementById('heroDate').textContent = fmtFullDate(day.date);
+  document.getElementById('heroTemp').textContent = day.temp + '°';
+  document.getElementById('heroScore').textContent = day.score;
+  const verdictEl = document.getElementById('heroVerdict');
+  const passing = day.forced || day.temp >= state.threshold;
+  verdictEl.classList.toggle('approved', passing);
+  verdictEl.classList.toggle('denied', !passing);
+  document.getElementById('heroStatus').textContent = passing ? (day.forced ? 'FORCERAD PROFETIA ✦' : 'DRICKNICK GODKÄND ☽') : 'NEKAD. FÖR NYKTER.';
+  document.getElementById('heroOracle').textContent = day.oracle || 'Konsulterar orakel…';
+  const pushBtn = document.getElementById('heroPush');
+  pushBtn.disabled = passing;
+  pushBtn.textContent = passing ? (day.forced ? '✦ REDAN FORCERAD ✦' : '☽ NATURLIGT GODKÄND ☽') : '🔥 FORCERA PROFETIAN';
+}
+
+function renderWeek() {
+  const grid = document.getElementById('weekGrid');
+  grid.innerHTML = '';
+  state.days.slice(1).forEach(day => {
+    const passing = day.forced || day.temp >= state.threshold;
+    const card = document.createElement('div');
+    card.className = `day-card ${passing ? 'approved' : 'denied'} ${isWeekend(day.date) ? 'weekend' : ''}`;
+    card.dataset.date = day.date;
+    card.innerHTML = `
+      <div class="day-name">${fmtDate(day.date)}</div>
+      <div class="temp">${day.temp}°</div>
+      <div class="meta">
+        <span title="Regn">☔ ${day.rain.toFixed(1)}mm</span>
+        <span title="Vind">༄ ${Math.round(day.wind)}</span>
+        <span title="Index">✦ ${day.score}</span>
+      </div>
+      <div class="score-bar"><div class="score-bar-fill" style="width:${day.score}%"></div></div>
+      <div class="verdict">${verdictText(day)}</div>
+      <button class="push-btn" data-date="${day.date}">🔥 Forcera till ${state.threshold}°C</button>
+      <div class="approved-badge">✦ RITUAL FULLBORDAD ✦</div>
+    `;
+    grid.appendChild(card);
+  });
+
+  // attach push handlers
+  grid.querySelectorAll('.push-btn').forEach(btn => {
+    btn.addEventListener('click', () => ritualPush(btn.dataset.date));
+  });
+}
+
+// =====================================================
+// RITUAL (push to threshold)
+// =====================================================
+
+async function ritualPush(dateStr) {
+  state.forced.add(dateStr);
+  localStorage.setItem('dricknick.forced', JSON.stringify([...state.forced]));
+  // find the card, play animation
+  const card = document.querySelector(`.day-card[data-date="${dateStr}"]`);
+  if (card) {
+    card.classList.add('ritualing', 'flashing');
+    playThunder();
+    setTimeout(() => card.classList.remove('ritualing', 'flashing'), 900);
+  }
+  // regenerate oracle for this day
+  const day = state.days.find(d => d.date === dateStr);
+  if (day) {
+    day.forced = true;
+    day.oracle = generateOracle(day);
+  }
+  // re-render
+  if (dateStr === state.days[0].date) {
+    renderHero(state.days[0]);
+  }
+  renderWeek();
+  toast('✦ PROFETIAN ÄR FORCERAD ✦');
+}
+
+async function heroRitualPush() {
+  const today = state.days[0];
+  if (!today) return;
+  const hero = document.getElementById('todayHero');
+  hero.classList.add('ritualing', 'flashing');
+  playThunder();
+  setTimeout(() => hero.classList.remove('ritualing', 'flashing'), 900);
+  await ritualPush(today.date);
+}
+
+// =====================================================
+// SHARE
+// =====================================================
+
+async function shareVerdict() {
+  const day = state.days[0];
+  const passing = day.forced || day.temp >= state.threshold;
+  const text = `☠ DRICKNICK.DEATH ☠
+${fmtFullDate(day.date)} — ${state.city.name}
+${day.temp}°C · Index ${day.score}/100
+Status: ${passing ? (day.forced ? 'FORCERAD PROFETIA' : 'DRICKNICK GODKÄND') : 'NEKAD. FÖR NYKTER.'}
+"${day.oracle || ''}"
+— dricknick.death`;
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('✦ VERDIKT KOPIERAT ✦');
+  } catch (e) {
+    toast('KUNDE EJ KOPIERA');
+  }
+}
+
+// =====================================================
+// SOUND (ominous wind via Web Audio)
+// =====================================================
+
+function initAudio() {
+  if (state.audio) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const bufferSize = 2 * ctx.sampleRate;
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    let lastOut = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      output[i] = (lastOut + (0.02 * white)) / 1.02;
+      lastOut = output[i];
+      output[i] *= 3.5;
     }
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuffer;
+    noise.loop = true;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 400;
+    const gain = ctx.createGain();
+    gain.gain.value = 0.06;
+    noise.connect(filter).connect(gain).connect(ctx.destination);
+    noise.start(0);
+    state.audio = { ctx, gain };
+    state.audio.gain.gain.value = 0;
+  } catch (e) { console.warn(e); }
+}
 
-    renderForecast(mockForecast);
-  </script>
+function playThunder() {
+  if (!state.soundOn || !state.audio) return;
+  try {
+    const ctx = state.audio.ctx;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(60, now);
+    osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.5);
+  } catch (e) {}
+}
+
+// =====================================================
+// COUNTDOWN
+// =====================================================
+
+function updateCountdown() {
+  const now = new Date();
+  const friday = new Date(now);
+  const dow = now.getDay();
+  // Days until Friday 17:00
+  let daysUntil = (5 - dow + 7) % 7;
+  friday.setDate(now.getDate() + daysUntil);
+  friday.setHours(17, 0, 0, 0);
+  if (friday <= now) friday.setDate(friday.getDate() + 7);
+  let diff = friday - now;
+  const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+  diff -= d * 24 * 60 * 60 * 1000;
+  const h = Math.floor(diff / (1000 * 60 * 60));
+  diff -= h * 60 * 60 * 1000;
+  const m = Math.floor(diff / (1000 * 60));
+  const el = document.getElementById('countdown');
+  el.innerHTML = `<span class="num">${d}</span>d <span class="num">${String(h).padStart(2,'0')}</span>h <span class="num">${String(m).padStart(2,'0')}</span>m`;
+}
+
+// =====================================================
+// TOAST
+// =====================================================
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// =====================================================
+// LORE ROTATION
+// =====================================================
+
+function rotateLore() {
+  const el = document.getElementById('lore');
+  el.style.opacity = '0';
+  setTimeout(() => {
+    el.textContent = LORE_LINES[Math.floor(Math.random() * LORE_LINES.length)];
+    el.style.opacity = '1';
+  }, 400);
+}
+
+// =====================================================
+// BOOT
+// =====================================================
+
+async function boot() {
+  updateCountdown();
+  setInterval(updateCountdown, 30000);
+  setInterval(rotateLore, 8000);
+
+  // fetch weather
+  const days = await fetchWeather();
+  if (!days) {
+    document.getElementById('heroStatus').textContent = 'VÄDRET SVARAR EJ';
+    document.getElementById('heroOracle').textContent = 'Oraklet når inte molnen idag. Försök igen om en stund, eller gå ut själv och känn på luften som en vuxen.';
+    return;
+  }
+  state.days = days;
+
+  // fyll oraklar synkront — ingen API, ingen väntan
+  state.days.forEach(d => { d.oracle = generateOracle(d); });
+
+  renderHero(state.days[0]);
+  renderWeek();
+}
+
+// =====================================================
+// EVENT LISTENERS
+// =====================================================
+
+document.getElementById('city').addEventListener('change', async e => {
+  const [lat, lon, name] = e.target.value.split(',');
+  state.city = { lat: parseFloat(lat), lon: parseFloat(lon), name };
+  const days = await fetchWeather();
+  if (days) {
+    days.forEach(d => d.forced = state.forced.has(d.date));
+    state.days = days;
+    state.days.forEach(d => { d.oracle = generateOracle(d); });
+    renderHero(state.days[0]);
+    renderWeek();
+  }
+});
+
+document.getElementById('threshold').addEventListener('change', e => {
+  state.threshold = parseInt(e.target.value, 10);
+  // Regenerera orakel — en ny tröskel kan ändra godkänd/nekad-status
+  state.days.forEach(d => { d.oracle = generateOracle(d); });
+  renderHero(state.days[0]);
+  renderWeek();
+});
+
+document.getElementById('soundToggle').addEventListener('click', (e) => {
+  state.soundOn = !state.soundOn;
+  if (state.soundOn) {
+    initAudio();
+    if (state.audio) state.audio.gain.gain.value = 0.05;
+    e.target.textContent = '🔊 LJUD PÅ';
+    e.target.classList.add('active');
+  } else {
+    if (state.audio) state.audio.gain.gain.value = 0;
+    e.target.textContent = '🔇 LJUD AV';
+    e.target.classList.remove('active');
+  }
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (!confirm('Rensa alla forcerade profetior? Orakeln förlåter, men glömmer inte.')) return;
+  state.forced = new Set();
+  localStorage.setItem('dricknick.forced', '[]');
+  state.days.forEach(d => { d.forced = false; d.oracle = generateOracle(d); });
+  renderHero(state.days[0]);
+  renderWeek();
+  toast('✦ MINNET RENSAT ✦');
+});
+
+document.getElementById('heroPush').addEventListener('click', heroRitualPush);
+document.getElementById('heroShare').addEventListener('click', shareVerdict);
+
+document.getElementById('rulesBtn').addEventListener('click', () => {
+  document.getElementById('rulesModal').classList.add('show');
+});
+document.getElementById('modalClose').addEventListener('click', () => {
+  document.getElementById('rulesModal').classList.remove('show');
+});
+document.getElementById('rulesModal').addEventListener('click', (e) => {
+  if (e.target.id === 'rulesModal') {
+    document.getElementById('rulesModal').classList.remove('show');
+  }
+});
+
+// Boot
+boot();
+</script>
 </body>
 </html>
