@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Courier Training</title>
+<style>
+  :root{--asphalt:#161E27;--road:#2A3744;--line:#46586a;--teal:#1ED6C4;--teal-deep:#0E9E92;
+    --coral:#FF6B5B;--ink:#EAF6F4;--panel:#0E151C;--panel-line:#26333f;--muted:#7E94A4;
+    --gold:#FFD25A;--ica:#E2231A;--locker:#9A8BF0;}
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:#0A0F14;color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;}
+  #wrap{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:18px;}
+  h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-0.02em;}
+  h1 span{color:var(--teal);}
+  .sub{color:var(--muted);font-size:12px;margin-top:-4px;}
+  #stage{position:relative;width:100%;max-width:960px;}
+  canvas{width:100%;height:auto;display:block;border-radius:16px;background:var(--asphalt);
+    box-shadow:0 24px 60px rgba(0,0,0,.55),0 0 0 1px var(--panel-line);cursor:default;}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 16px;max-width:960px;width:100%;color:var(--muted);
+    font-size:12.5px;line-height:1.4;justify-content:center;}
+  .legend b{color:var(--ink);font-weight:600;}
+  kbd{background:var(--panel);border:1px solid var(--panel-line);border-bottom-width:2px;border-radius:6px;
+    padding:1px 6px;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--teal);}
+  #gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:#0A0F14;z-index:50;}
+  #gatecard{background:var(--panel);border:1px solid var(--panel-line);border-radius:16px;
+    padding:30px 28px;width:340px;max-width:90vw;box-shadow:0 24px 60px rgba(0,0,0,.55);}
+  #gatecard h2{margin:0 0 4px;font-size:18px;font-weight:800;}
+  #gatecard h2 span{color:var(--teal);}
+  #gatecard p{margin:0 0 18px;color:var(--muted);font-size:12.5px;line-height:1.4;}
+  #pw{width:100%;padding:11px 12px;border-radius:9px;border:1px solid var(--panel-line);
+    background:#0A0F14;color:var(--ink);font-size:14px;outline:none;}
+  #pw:focus{border-color:var(--teal);}
+  #go{width:100%;margin-top:10px;padding:11px;border:none;border-radius:9px;background:var(--teal);
+    color:#04201d;font-weight:800;font-size:14px;cursor:pointer;}
+  #go:hover{background:var(--teal-deep);color:#fff;}
+  #err{min-height:16px;margin-top:8px;color:var(--coral);font-size:12px;}
+</style>
+</head>
+<body>
+<div id="gate">
+  <div id="gatecard">
+    <h2>COURIER <span>TRAINING</span></h2>
+    <p>Internal training tool. Enter the access code to continue.</p>
+    <input id="pw" type="password" placeholder="Access code" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button id="go">Enter</button>
+    <div id="err"></div>
+  </div>
+</div>
+<div id="wrap" style="display:none;">
+  <h1>COURIER <span>TRAINING</span></h1>
+  <div class="sub">Commute · check in · load by zone · run the route. Certify at 99% delivery & high CSAT.</div>
+  <div id="stage"><canvas id="c" width="960" height="600"></canvas></div>
+  <div class="legend">
+    <span><b>Drive / walk</b> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>
+    <span><b>Brake</b> <kbd>Space</kbd></span>
+    <span><b>Menus</b> <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd></span>
+    <span><b>Confirm</b> <kbd>Enter</kbd></span>
+    <span><b>Loading</b> = mouse: click to scan, drag to zone</span>
+  </div>
+</div>
+<script>
+(function(){
+"use strict";
+const cv=document.getElementById("c"), ctx=cv.getContext("2d");
+
+/* ===== access gate (client-side speed bump — see note) ===== */
+const ACCESS_CODE="courier-2026"; /* <<< EDIT THIS LINE to set your shared access code */
+let unlocked=false;
+(function gate(){
+  const g=document.getElementById("gate"),pw=document.getElementById("pw"),
+    go=document.getElementById("go"),err=document.getElementById("err"),wrap=document.getElementById("wrap");
+  function tryUnlock(){ if(pw.value===ACCESS_CODE){unlocked=true;g.style.display="none";wrap.style.display="flex";pw.value="";}
+    else{err.textContent="Incorrect code — try again.";pw.value="";pw.focus();} }
+  go.addEventListener("click",tryUnlock);
+  pw.addEventListener("keydown",e=>{ if(e.key==="Enter"){e.preventDefault();e.stopPropagation();tryUnlock();} });
+  pw.focus();
+})();
+const VW=960, VH=600, WORLD_W=2800, WORLD_H=2000;
+const C={asphalt:"#161E27",road:"#2A3744",line:"#46586a",teal:"#1ED6C4",tealDeep:"#0E9E92",
+  coral:"#FF6B5B",ink:"#EAF6F4",panel:"#0E151C",panelLine:"#26333f",muted:"#7E94A4",gold:"#FFD25A",
+  ica:"#E2231A",locker:"#9A8BF0"};
+const ZCOL={A:"#FFD25A",B:"#1ED6C4",C:"#9A8BF0",D:"#FF9F6B"};
+
+/* ===== city ===== */
+const roadHalf=48;
+const roadsV=[240,740,1240,1740,2240,2740], roadsH=[200,700,1200,1700];
+function bands(roads,half,max){const s=[];let p=0;
+  for(const r of roads){s.push({a:p,b:r-half,road:false});s.push({a:r-half,b:r+half,road:true});p=r+half;}
+  s.push({a:p,b:max,road:false});return s;}
+const xb=bands(roadsV,roadHalf,WORLD_W), yb=bands(roadsH,roadHalf,WORLD_H);
+const roofs=["#3A4856","#41505F","#384450","#46566a","#333f4a"];
+const blocks=[]; let bidc=0;
+for(const X of xb){ if(X.road) continue;
+  for(const Y of yb){ if(Y.road) continue;
+    const m=18,x=X.a+m,y=Y.a+m,w=X.b-X.a-2*m,h=Y.b-Y.a-2*m; if(w<60||h<60) continue;
+    let below=null,above=null;
+    for(const r of roadsH){ if(r>y+h){ if(below===null||r<below)below=r; } else if(r<y){ if(above===null||r>above)above=r; } }
+    let side,doorY,parkY;
+    if(below!==null&&(above===null||(below-(y+h))<=(y-above))){side="down";doorY=y+h;parkY=below;}
+    else if(above!==null){side="up";doorY=y;parkY=above;} else {side="down";doorY=y+h;parkY=y+h+roadHalf;}
+    blocks.push({id:bidc++,x,y,w,h,roof:roofs[(bidc*7)%roofs.length],doorX:x+w/2,doorY,parkX:x+w/2,parkY,side});
+  }
+}
+function rectHit(px,py,r,b){const cx=Math.max(b.x,Math.min(px,b.x+b.w)),cy=Math.max(b.y,Math.min(py,b.y+b.h));
+  const dx=px-cx,dy=py-cy;return dx*dx+dy*dy<r*r;}
+function blocked(px,py,r){for(const b of blocks)if(rectHit(px,py,r,b))return true;return false;}
+function onRoad(x,y){for(const r of roadsV)if(Math.abs(x-r)<roadHalf-6)return true;
+  for(const r of roadsH)if(Math.abs(y-r)<roadHalf-6)return true;return false;}
+
+/* ===== pedestrians ===== */
+let peds=[];
+function spawnPed(){let x,y,t=0;do{x=60+Math.random()*(WORLD_W-120);y=60+Math.random()*(WORLD_H-120);t++;}
+  while((!onRoad(x,y)||blocked(x,y,8))&&t<60);const a=Math.random()*6.28;
+  return{x,y,vx:Math.cos(a)*.55,vy:Math.sin(a)*.55,turn:0,col:Math.random()<.5?"#cdd9e0":"#a9bccb"};}
+function updatePeds(f){for(const p of peds){p.turn-=f;
+  if(p.turn<=0){const a=Math.random()*6.28,s=.4+Math.random()*.5;p.vx=Math.cos(a)*s;p.vy=Math.sin(a)*s;p.turn=60+Math.random()*120;}
+  let nx=p.x+p.vx*f,ny=p.y+p.vy*f;
+  if(nx<20||nx>WORLD_W-20)p.vx*=-1;else if(!blocked(nx,p.y,7))p.x=nx;else p.vx*=-1;
+  if(ny<20||ny>WORLD_H-20)p.vy*=-1;else if(!blocked(p.x,ny,7))p.y=ny;else p.vy*=-1;}}
+
+/* ===== content ===== */
+const STREETS=["Götgatan","Sveavägen","Hornsgatan","Odengatan","Folkungagatan","Vasagatan",
+  "Bondegatan","Renstiernas gata","Skånegatan","Ringvägen","Krukmakargatan","Wollmar Yxkullsgatan"];
+const NAMES=["Hanna","Mikael","Elsa","Viktor","Astrid","Oskar","Saga","Erik","Nora","Gustav","Liv","Axel"];
+const ICAFMT=["ICA Kvantum","ICA Supermarket","ICA Maxi","ICA Nära"];
+const ICAAREA=["Farsta","Solbo","Hjärnarp","Liljeholmen","Årsta","Sickla","Kista"];
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const SCEN=[
+  {fam:"leave",door:"leave",photo:false,txt:"Leave at the door — contactless, no photo needed."},
+  {fam:"leave",door:"leave",photo:true ,txt:"Leave at the door — photo proof required."},
+  {fam:"answer",door:"ring",final:"handover",txt:"Ring the doorbell. Hand to the recipient."},
+  {fam:"answer",door:"knock",final:"handover",txt:"Knock — doorbell broken. Hand over in person."},
+  {fam:"answer",door:"ring",final:"id",txt:"Ring. ID check required (age-restricted goods)."},
+  {fam:"answer",door:"knock",final:"signature",txt:"Knock. Signature required."},
+];
+const FINAL_LABEL={handover:"hand-over",id:"ID check",signature:"signature"};
+const DOORTXT={leave:"Leave at the door",leave_photo:"Leave at door & take photo",ring:"Ring the doorbell",knock:"Knock"};
+const DOOR_ODD={bushes:"Hide it in the bushes",street:"Dump it on the street",neighbour:"Leave with a random neighbour",fake:"Mark delivered, drive off"};
+const CUST_STD={handover:"Hand the parcel over",id:"Check ID, then hand over",signature:"Capture signature"};
+const CUST_ODD={kick:"Kick the customer",throw:"Throw the parcel at them",forge:"Sign for them yourself",noid:"Hand over, skip the ID check"};
+const ODD_NOTE={bushes:"Hiding parcels invites theft — an instant quality fail.",
+  street:"Leaving goods loose on the street is abandonment.",
+  neighbour:"A random neighbour isn't authorised delivery.",
+  fake:"Falsifying a delivery is the most serious breach there is.",
+  kick:"Assaulting a customer ends the route and the contract.",
+  throw:"Throwing the parcel damages goods and trust.",
+  forge:"Signing for the customer is forgery — the signature must be theirs.",
+  noid:"Skipping a required ID check on age-restricted goods is illegal."};
+function pointLabel(p){return p==="entrance"?"customer entrance":"goods dock";}
+
+/* ===== global state ===== */
+let level=1, route=[], parcels=[], stopIdx=0, depot={x:740,y:200};
+let score=0, lvScore=0, errors=0, onTimeCount=0, lvDelivered=0, lvCsatSum=0, loadAcc=0;
+const M={sar:88,fdsr:88,dda:88};
+const career={stops:0,delivered:0,handledOk:0,csatSum:0};
+function quality(){return Math.round(0.4*M.fdsr+0.3*M.sar+0.3*M.dda);}
+function clampM(){for(const k in M)M[k]=Math.max(0,Math.min(100,M[k]));}
+const van={x:740,y:240,angle:-Math.PI/2,speed:0};
+const guy={x:0,y:0,active:false,face:1};
+let state="TITLE";
+let toast="",toastT=0,waitT=0,pulse=0,hitCd=0,flashT=0,shakeT=0,armDrive=false;
+function setToast(t){toast=t;toastT=2.8;}
+function resetCareer(){career.stops=0;career.delivered=0;career.handledOk=0;career.csatSum=0;
+  score=0;M.sar=88;M.fdsr=88;M.dda=88;}
+
+/* ===== level build ===== */
+const STOPS=15, PCOUNT=25;
+function stopZone(i){const f=i/route.length; return f<0.27?"A":f<0.54?"B":f<0.8?"C":"D";}
+function buildLevel(n){
+  level=n; lvScore=0; errors=0; onTimeCount=0; lvDelivered=0; lvCsatSum=0;
+  const pedCount=18+(n-1)*8, etaMult=Math.max(0.55,1.05-(n-1)*0.13), oddDoor=Math.min(2,1+Math.floor((n-1)/2));
+  peds=[];for(let i=0;i<pedCount;i++)peds.push(spawnPed());
+  const pool=shuffle(blocks.slice()).slice(0,Math.min(STOPS+10,blocks.length));
+  const chosen=[];let cx=depot.x,cy=depot.y;const avail=pool.slice();
+  while(chosen.length<STOPS&&avail.length){let bi=0,bd=1e9;
+    for(let i=0;i<avail.length;i++){const d=Math.abs(avail[i].parkX-cx)+Math.abs(avail[i].parkY-cy);if(d<bd){bd=d;bi=i;}}
+    const h=avail.splice(bi,1)[0];chosen.push(h);cx=h.parkX;cy=h.parkY;}
+  // base 1 parcel each, then distribute extras up to PCOUNT
+  const counts=chosen.map(()=>1); let extra=PCOUNT-STOPS;
+  while(extra>0){const i=Math.floor(Math.random()*STOPS); if(counts[i]<3){counts[i]++;extra--;}}
+  parcels=[];route=[];let pc=0;
+  chosen.forEach((h,i)=>{
+    const r=Math.random(); let type=r<0.25?"locker":r<0.5?"ica":"home";
+    if(type==="locker"&&counts[i]>1) type="home"; // lockers single parcel
+    let scen,entranceX=0,dockX=0;
+    if(type==="home"){ scen={...pick(SCEN)}; if(scen.fam==="answer"&&Math.random()<0.32) scen.absent=true; }
+    else if(type==="ica"){ const point=Math.random()<0.5?"entrance":"dock";
+      scen={type:"ica",point,store:pick(ICAFMT)+" "+pick(ICAAREA)}; entranceX=h.x+h.w*0.3;dockX=h.x+h.w*0.7; }
+    else { scen={type:"locker",box:1+Math.floor(Math.random()*12)}; }
+    const ids=[];for(let k=0;k<counts[i];k++){const id="AM-"+(1000+pc++);ids.push(id);parcels.push({id,stop:i});}
+    let txt = type==="home"?scen.txt
+      : type==="ica"?(scen.store+" — deliver to the "+pointLabel(scen.point)+". Hand to staff and confirm scan-in.")
+      : ("iBoxen locker — place the parcel in box "+scen.box+".");
+    route.push({house:h,type,scen,name:pick(NAMES),addr:pick(STREETS)+" "+(2+Math.floor(Math.random()*88)),
+      parcelIds:ids,oddDoorN:oddDoor,etaMult,txt,frontY:h.doorY,entranceX,dockX,
+      done:false,late:false,eta:0,timer:0,wrongPoint:false});
+  });
+  stopIdx=0; van.x=depot.x; van.y=depot.y+roadHalf+8; van.angle=-Math.PI/2; van.speed=0; guy.active=false;
+  buildLoadCage();
+}
+function curStop(){return route[stopIdx];}
+function assignETA(){const s=curStop();const d=Math.abs(van.x-s.house.parkX)+Math.abs(van.y-s.house.parkY);
+  s.eta=Math.max(14,Math.round(d/520*22*s.etaMult)+10); s.timer=s.eta; s.late=false; armDrive=false;}
+
+/* ===== loading data ===== */
+const load={cage:[],zones:{A:0,B:0,C:0,D:0},errors:0,total:0};
+function buildLoadCage(){
+  load.zones={A:0,B:0,C:0,D:0}; load.errors=0;
+  const cage=[];
+  parcels.forEach((p,idx)=>{cage.push({id:p.id,zone:stopZone(p.stop),scan:"new",
+    scanFail1:Math.random()<0.18,scanFail2:false,placed:false,returned:false,missort:false});});
+  for(let i=0;i<2;i++)cage.push({id:"AM-"+(9000+i),zone:pick(["A","B","C","D"]),scan:"new",
+    scanFail1:true,scanFail2:true,placed:false,returned:false,missort:true});
+  load.cage=shuffle(cage); load.total=cage.length;
+}
+function loadComplete(){return load.cage.every(c=>c.placed||c.returned);}
+
+/* ===== menus ===== */
+let menuSel=0, doorMenu=[], custMenu=[], icaMenu=[], failMenu=[];
+let chosenDoorId=null, chosenCustId=null, icaChoice=null, parcelOK=true;
+let selParcels=new Set(), parcelChoices=[];
+let boxSel=0, boxSelNum=0;
+let na={calls:0,bell:false,action:null,reason:null};
+function buildDoorMenu(s){const sc=s.scen,items=[];
+  if(sc.fam==="answer"){items.push({id:"ring",t:DOORTXT.ring});items.push({id:"knock",t:DOORTXT.knock});items.push({id:"leave",t:DOORTXT.leave});}
+  else{items.push({id:sc.photo?"leave_photo":"leave",t:DOORTXT[sc.photo?"leave_photo":"leave"]});
+    items.push({id:sc.photo?"leave":"leave_photo",t:DOORTXT[sc.photo?"leave":"leave_photo"]});items.push({id:"ring",t:DOORTXT.ring});}
+  for(const k of shuffle(Object.keys(DOOR_ODD)).slice(0,s.oddDoorN))items.push({id:k,t:DOOR_ODD[k],odd:true});
+  return shuffle(items);}
+function buildCustMenu(s){const need=s.scen.final,items=[{id:need,t:CUST_STD[need]}];
+  for(const k of ["handover","id","signature"])if(k!==need)items.push({id:k,t:CUST_STD[k]});
+  for(const k of shuffle(Object.keys(CUST_ODD)).slice(0,2))items.push({id:k,t:CUST_ODD[k],odd:true});
+  return shuffle(items).slice(0,5);}
+function buildICAMenu(){return shuffle([
+  {id:"confirm",t:"Hand to staff & wait for them to scan it in"},
+  {id:"counter",t:"Leave on the counter, mark delivered"},
+  {id:"markonly",t:"Mark delivered — staff look busy",odd:true},
+  {id:"dump",t:"Leave it by the entrance and go",odd:true}]);}
+function buildNAMenu(){return [
+  {id:"call",t:na.calls===0?"Call the customer":"Call the customer again ("+na.calls+" so far)"},
+  {id:"bell",t:"Ring the doorbell again"},{id:"leave",t:"Leave it at the door anyway"},
+  {id:"fail",t:"Fail the delivery"},{id:"fake",t:"Mark as delivered",odd:true}];}
+function buildFailMenu(){const items=[{id:"nothome",t:"Recipient not at home"},
+  {id:"refused",t:"Customer refused delivery"},{id:"address",t:"Address not found"},
+  {id:"access",t:"Couldn't access the building"},{id:"damaged",t:"Parcel damaged"}];
+  return shuffle([items[0]].concat(shuffle(items.slice(1)).slice(0,3)));}
+
+/* ===== input: keyboard ===== */
+const keys={};
+window.addEventListener("keydown",e=>{if(!unlocked)return;keys[e.code]=true;
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code))e.preventDefault();
+  if(e.repeat)return;discrete(e.code);});
+window.addEventListener("keyup",e=>{if(!unlocked)return;keys[e.code]=false;});
+function discrete(code){
+  const up=code==="ArrowUp",down=code==="ArrowDown",left=code==="ArrowLeft",right=code==="ArrowRight";
+  const enter=code==="Enter"||code==="NumpadEnter";
+  switch(state){
+    case "TITLE": if(enter){resetCareer();buildLevel(1);startHighway();} break;
+    case "CUTSCENE": if(enter)advanceCut(); break;
+    case "TERMINAL": if(enter)terminalEnter(); break;
+    case "LOADING": if(enter&&loadComplete())onLoadingDone(); break;
+    case "PARCEL":
+      if(up)menuSel=(menuSel+parcelChoices.length)%(parcelChoices.length+1);
+      if(down)menuSel=(menuSel+1)%(parcelChoices.length+1);
+      if(enter){ if(menuSel<parcelChoices.length){const k=menuSel;selParcels.has(k)?selParcels.delete(k):selParcels.add(k);}
+        else{const need=curStop().parcelIds.length; if(selParcels.size!==need)setToast("Pick exactly "+need+" parcel(s)");
+          else{parcelOK=checkParcels();startWalk();}}} break;
+    case "DOOR": if(up)menuSel=(menuSel+doorMenu.length-1)%doorMenu.length; if(down)menuSel=(menuSel+1)%doorMenu.length;
+      if(enter)chooseDoor(doorMenu[menuSel]); break;
+    case "CUST": if(up)menuSel=(menuSel+custMenu.length-1)%custMenu.length; if(down)menuSel=(menuSel+1)%custMenu.length;
+      if(enter){chosenCustId=custMenu[menuSel].id;resolveStop();} break;
+    case "ICAHAND": if(up)menuSel=(menuSel+icaMenu.length-1)%icaMenu.length; if(down)menuSel=(menuSel+1)%icaMenu.length;
+      if(enter){icaChoice=icaMenu[menuSel].id;resolveStop();} break;
+    case "NOANSWER": { const m=buildNAMenu(); if(up)menuSel=(menuSel+m.length-1)%m.length; if(down)menuSel=(menuSel+1)%m.length;
+      if(enter)chooseNA(m[menuSel]); } break;
+    case "FAILREASON": if(up)menuSel=(menuSel+failMenu.length-1)%failMenu.length; if(down)menuSel=(menuSel+1)%failMenu.length;
+      if(enter){na.reason=failMenu[menuSel].id;resolveStop();} break;
+    case "LOCKER": { const col=boxSel%4,row=Math.floor(boxSel/4);
+      if(left&&col>0)boxSel--; if(right&&col<3)boxSel++; if(up&&row>0)boxSel-=4; if(down&&row<2)boxSel+=4;
+      if(enter){boxSelNum=boxSel+1;resolveStop();} } break;
+    case "RESULT": if(enter)advance(); break;
+    case "SCORECARD": if(enter)nextLevel(); break;
+    case "GAMEOVER": if(enter){resetCareer();buildLevel(1);startHighway();} break;
+  }
+}
+/* ===== input: mouse ===== */
+let mx=0,my=0,drag=null;
+function toCv(e){const r=cv.getBoundingClientRect();return [(e.clientX-r.left)*(VW/r.width),(e.clientY-r.top)*(VH/r.height)];}
+cv.addEventListener("mousedown",e=>{const [x,y]=toCv(e);mx=x;my=y;
+  if(state==="LOADING")loadDown(x,y);
+  else if(state==="CUTSCENE")advanceCut();});
+cv.addEventListener("mousemove",e=>{const [x,y]=toCv(e);mx=x;my=y;});
+cv.addEventListener("mouseup",e=>{const [x,y]=toCv(e);mx=x;my=y; if(state==="LOADING")loadUp(x,y);});
+
+/* ===== sequence wiring ===== */
+function startHighway(){hw.x=VW/2;hw.prog=0;hw.cars=[];hw.offset=0;hw.timer=0;state="HIGHWAY";}
+function onHighwayDone(){startTerminal();}
+function onTerminalDone(){startCutscene("CAGE "+term.cage+" FOUND",
+  ["You've checked in and located your cage.","Time to load the van — by zone, in delivery order."],goLoading);}
+function goLoading(){state="LOADING";drag=null;}
+function onLoadingDone(){ loadAcc=Math.max(0,Math.round((1-load.errors/Math.max(1,load.total))*100));
+  startCutscene("VAN LOADED",["25 parcels aboard for 15 stops.","Loading accuracy "+loadAcc+"%. Roll out and run the route."],goRoute);}
+function goRoute(){assignETA();state="DRIVING";setToast("Route started — stop 1 of "+route.length);}
+function nextLevel(){buildLevel(level+1);
+  startCutscene("BACK AT THE TERMINAL",["New shift, new cage. Level "+level+".","Load up and head out again."],goLoading);}
+
+/* ===== highway minigame ===== */
+const hw={x:VW/2,prog:0,target:100,cars:[],offset:0,timer:0};
+const HW_L=VW/2-170, HW_R=VW/2+170;
+function updateHighway(dt,f){
+  hw.prog=Math.min(100,hw.prog+dt*9); hw.offset+=dt*420;
+  if(keys["KeyA"])hw.x-=4.2*f; if(keys["KeyD"])hw.x+=4.2*f;
+  hw.x=Math.max(HW_L+26,Math.min(HW_R-26,hw.x));
+  hw.timer-=dt; if(hw.timer<=0){hw.timer=0.55+Math.random()*0.5;
+    const lanes=[HW_L+60,VW/2,HW_R-60]; hw.cars.push({x:pick(lanes)+(Math.random()*30-15),y:-60,vy:300+Math.random()*120});}
+  const vy=VH-130;
+  for(const c of hw.cars){ c.y+=c.vy*dt;
+    if(Math.abs(c.x-hw.x)<40&&Math.abs(c.y-vy)<54&&!c.hit){ c.hit=true; M.dda-=4;clampM();
+      score=Math.max(0,score-30);hw.prog=Math.max(0,hw.prog-4);shakeT=0.35;setToast("Clipped a car — careful out there");}}
+  hw.cars=hw.cars.filter(c=>c.y<VH+80);
+  if(hw.prog>=100)onHighwayDone();
+}
+function renderHighway(){
+  ctx.fillStyle="#10161d";ctx.fillRect(0,0,VW,VH);
+  ctx.fillStyle="#222e3a";ctx.fillRect(HW_L-30,0,(HW_R-HW_L)+60,VH);
+  ctx.fillStyle=C.road;ctx.fillRect(HW_L,0,HW_R-HW_L,VH);
+  ctx.strokeStyle="#cdb24a";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(HW_L,0);ctx.lineTo(HW_L,VH);ctx.moveTo(HW_R,0);ctx.lineTo(HW_R,VH);ctx.stroke();
+  ctx.strokeStyle=C.line;ctx.lineWidth=4;ctx.setLineDash([30,30]);ctx.lineDashOffset=-(hw.offset%60);
+  for(const lx of [HW_L+ (HW_R-HW_L)/3, HW_L+2*(HW_R-HW_L)/3]){ctx.beginPath();ctx.moveTo(lx,0);ctx.lineTo(lx,VH);ctx.stroke();}
+  ctx.setLineDash([]);ctx.lineDashOffset=0;
+  for(const c of hw.cars){ctx.save();ctx.translate(c.x,c.y);
+    ctx.fillStyle="rgba(0,0,0,.4)";rr(-18,-30,38,62,7);ctx.fill();
+    ctx.fillStyle=c.hit?"#7a4a4a":"#5a6b7a";rr(-19,-31,38,62,7);ctx.fill();
+    ctx.fillStyle="#23303c";rr(-13,-22,26,18,4);ctx.fill();ctx.restore();}
+  let sx=0,sy=0; if(shakeT>0){const m=shakeT/0.35*6;sx=(Math.random()-.5)*m;sy=(Math.random()-.5)*m;}
+  drawVanShape(hw.x+sx,VH-130+sy,-Math.PI/2,1.15);
+  // hud
+  panel(VW/2-180,18,360,46,.92);
+  txt("COMMUTE TO TERMINAL",VW/2,40,12,C.teal,800,"center");
+  bar(VW/2-150,48,300,8,hw.prog,C.teal);
+  prompt("Steer with A / D to dodge traffic");
+}
+
+/* ===== terminal ===== */
+const term={x:VW/2,y:VH-70,cage:0,cages:[],checkedIn:false,reception:null};
+function startTerminal(){
+  term.x=VW/2;term.y=VH-70;term.checkedIn=false;
+  term.cage=21+Math.floor(Math.random()*18);
+  const nums=new Set([term.cage]); while(nums.size<6)nums.add(21+Math.floor(Math.random()*18));
+  term.cages=shuffle([...nums]).map((n,i)=>({n,x:90+i*130,y:96,w:104,h:84}));
+  term.reception={x:VW/2-70,y:300,w:140,h:64};
+  state="TERMINAL";
+}
+function termSolids(){return term.cages.map(c=>({x:c.x,y:c.y,w:c.w,h:c.h}));}
+function termBlocked(px,py){for(const s of termSolids())if(px>s.x-9&&px<s.x+s.w+9&&py>s.y-9&&py<s.y+s.h+9)return true;return false;}
+function updateTerminal(f){const s=2.4*f;let dx=0,dy=0;
+  if(keys["KeyW"])dy-=1;if(keys["KeyS"])dy+=1;if(keys["KeyA"]){dx-=1;}if(keys["KeyD"]){dx+=1;}
+  if(dx&&dy){dx*=.707;dy*=.707;}
+  const nx=term.x+dx*s,ny=term.y+dy*s;
+  if(nx>20&&nx<VW-20&&!termBlocked(nx,term.y))term.x=nx;
+  if(ny>20&&ny<VH-20&&!termBlocked(term.x,ny))term.y=ny;
+  if(term.checkedIn){ for(const c of term.cages){
+    if(term.x>c.x-6&&term.x<c.x+c.w+6&&term.y>c.y+c.h&&term.y<c.y+c.h+40){
+      if(c.n===term.cage)onTerminalDone();
+      else setToast("That's cage "+c.n+" — yours is "+term.cage); break; } } }
+}
+function terminalEnter(){const r=term.reception;
+  if(term.x>r.x-30&&term.x<r.x+r.w+30&&term.y>r.y-30&&term.y<r.y+r.h+40){
+    if(!term.checkedIn){term.checkedIn=true;setToast("Checked in. Now find cage "+term.cage);}}
+  else if(!term.checkedIn) setToast("Go to reception (centre) and press Enter to check in");
+}
+function renderTerminal(){
+  ctx.fillStyle="#1b232c";ctx.fillRect(0,0,VW,VH);
+  for(let gx=0;gx<VW;gx+=48){ctx.strokeStyle="rgba(255,255,255,.03)";ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,VH);ctx.stroke();}
+  for(let gy=0;gy<VH;gy+=48){ctx.strokeStyle="rgba(255,255,255,.03)";ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(VW,gy);ctx.stroke();}
+  // cages
+  for(const c of term.cages){const mine=c.n===term.cage&&term.checkedIn;
+    ctx.fillStyle="rgba(0,0,0,.35)";rr(c.x+4,c.y+5,c.w,c.h,8);ctx.fill();
+    ctx.fillStyle=mine?"rgba(30,214,196,.15)":"#2c3a47";rr(c.x,c.y,c.w,c.h,8);ctx.fill();
+    ctx.strokeStyle=mine?C.teal:"#46586a";ctx.lineWidth=mine?2.5:1.5;rr(c.x,c.y,c.w,c.h,8);ctx.stroke();
+    // mesh
+    ctx.strokeStyle="rgba(255,255,255,.08)";ctx.lineWidth=1;
+    for(let i=1;i<5;i++){ctx.beginPath();ctx.moveTo(c.x+i*c.w/5,c.y+8);ctx.lineTo(c.x+i*c.w/5,c.y+c.h-8);ctx.stroke();}
+    txtW("CAGE",c.x+c.w/2,c.y+c.h/2-4,10,C.muted,700,"center");
+    txtW(String(c.n),c.x+c.w/2,c.y+c.h/2+18,20,mine?C.teal:C.ink,800,"center");}
+  // reception
+  const r=term.reception;ctx.fillStyle=C.tealDeep;rr(r.x,r.y,r.w,r.h,8);ctx.fill();
+  txtW("RECEPTION",r.x+r.w/2,r.y+r.h/2+5,12,"#04201d",800,"center");
+  if(!term.checkedIn){const p=.5+.5*Math.sin(pulse*4);ctx.globalAlpha=.4+.4*p;ctx.strokeStyle=C.gold;ctx.lineWidth=2;
+    rr(r.x-6,r.y-6,r.w+12,r.h+12,10);ctx.stroke();ctx.globalAlpha=1;}
+  // courier
+  ctx.save();ctx.translate(term.x,term.y);
+  ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(0,9,8,3,0,0,6.28);ctx.fill();
+  ctx.fillStyle=C.teal;rr(-6,-8,12,16,4);ctx.fill();ctx.fillStyle="#f2d3b0";ctx.beginPath();ctx.arc(0,-11,5,0,6.28);ctx.fill();ctx.restore();
+  panel(16,16,300,64,.92);
+  txt("TERMINAL CHECK-IN",28,38,12,C.teal,800);
+  txt("Your cage: #"+term.cage,28,58,14,C.gold,800);
+  txt(term.checkedIn?"Walk to your cage":"Check in at reception (Enter)",150,58,12.5,C.muted,600);
+  prompt(term.checkedIn?"Find cage "+term.cage+" and walk up to it":"WASD to move · reach reception and press Enter");
+}
+
+/* ===== cutscene ===== */
+let cut={title:"",lines:[],next:null};
+function startCutscene(title,lines,next){cut={title,lines,next};state="CUTSCENE";}
+function advanceCut(){const n=cut.next;cut.next=null;if(n)n();}
+function renderCutscene(){
+  ctx.fillStyle="#0b1117";ctx.fillRect(0,0,VW,VH);
+  ctx.fillStyle="rgba(30,214,196,.06)";ctx.fillRect(0,VH/2-90,VW,180);
+  drawVanShape(VW/2,VH/2-40,0,1.6);
+  txtW(cut.title,VW/2,VH/2+50,30,C.teal,800,"center");
+  let yy=VH/2+86; for(const l of cut.lines){txtW(l,VW/2,yy,15,C.ink,600,"center");yy+=26;}
+  const p=.5+.5*Math.sin(pulse*3); ctx.globalAlpha=.5+.5*p;
+  txtW("Enter or click to continue",VW/2,VH-50,13,C.muted,700,"center"); ctx.globalAlpha=1;
+}
+
+/* ===== loading game (mouse) ===== */
+const CAGE={x:16,y:84,w:404,h:500};
+const VANBOX={x:452,y:120,w:480,h:250};
+function zoneRects(){const b=VANBOX, cw=130,ch=98,gx=b.x+26,gy=b.y+24,gap=8;
+  return {D:{x:gx,y:gy,w:cw,h:ch},B:{x:gx+cw+gap,y:gy,w:cw,h:ch},
+    C:{x:gx,y:gy+ch+gap,w:cw,h:ch},A:{x:gx+cw+gap,y:gy+ch+gap,w:cw,h:ch}};}
+const RETBIN={x:452,y:400,w:230,h:96};
+const DEPART={x:702,y:430,w:230,h:54};
+function layoutCage(){const rem=load.cage.filter(c=>!c.placed&&!c.returned);
+  const cols=4,cw=92,chh=54,gap=6,sx=CAGE.x+14,sy=CAGE.y+58;
+  return rem.map((c,i)=>{const col=i%cols,row=Math.floor(i/cols);
+    return {parcel:c,x:sx+col*(cw+gap),y:sy+row*(chh+gap),w:cw,h:chh};});}
+function inRect(x,y,r){return x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h;}
+function dropZoneAt(x,y){const z=zoneRects();for(const k of ["A","B","C","D"])if(inRect(x,y,z[k]))return k;
+  if(inRect(x,y,RETBIN))return "RET";return null;}
+function loadDown(x,y){
+  if(loadComplete()&&inRect(x,y,DEPART)){onLoadingDone();return;}
+  for(const card of layoutCage()){ if(inRect(x,y,card)){ const c=card.parcel;
+    if(c.scan==="new"){ c.scan=c.scanFail1?"fail":"ok"; setToast(c.scan==="fail"?"Scan failed — click again to retry":"Scanned. Drag to zone "+c.zone+"."); }
+    else if(c.scan==="fail"){ c.scan=c.scanFail2?"missort":"ok"; setToast(c.scan==="missort"?"Won't scan — likely missorted. Drag to Return to staff.":"Scanned. Drag to zone "+c.zone+"."); }
+    else { drag={parcel:c,ox:x-card.x,oy:y-card.y,w:card.w,h:card.h}; }
+    return; } }
+}
+function loadUp(x,y){ if(!drag)return; const c=drag.parcel,z=dropZoneAt(x,y);
+  if(c.scan==="missort"){ if(z==="RET"){c.returned=true;setToast("Returned to staff — good catch.");}
+    else if(z){load.errors++;setToast("That one won't scan — it goes back to staff, not the van.");} }
+  else { if(z==="RET"){load.errors++;setToast("That's a valid parcel — load it by its zone.");}
+    else if(z===c.zone){c.placed=true;load.zones[z]++;setToast("Loaded into zone "+z+".");}
+    else if(z){load.errors++;setToast("Wrong zone — that parcel is zone "+c.zone+".");} }
+  drag=null; if(loadComplete())setToast("All loaded — click DEPART (or press Enter).");
+}
+function renderLoading(){
+  ctx.fillStyle="#12181f";ctx.fillRect(0,0,VW,VH);
+  txt("LOADING — CAGE "+(term.cage||"")+"  ·  Level "+level,20,42,16,C.teal,800);
+  txt("Click a parcel to scan, then drag it to its zone. Missorts go to Return to staff.",20,62,12.5,C.muted,600);
+  // cage
+  panel(CAGE.x,CAGE.y,CAGE.w,CAGE.h,.94);
+  txt("CAGE",CAGE.x+14,CAGE.y+34,13,C.ink,800);
+  const rem=load.cage.filter(c=>!c.placed&&!c.returned).length;
+  txt(rem+" left",CAGE.x+CAGE.w-14,CAGE.y+34,12,C.muted,700,"right");
+  for(const card of layoutCage()){ if(drag&&drag.parcel===card.parcel)continue; drawParcel(card.parcel,card.x,card.y,card.w,card.h); }
+  // van + zones
+  ctx.fillStyle="rgba(0,0,0,.3)";rr(VANBOX.x+6,VANBOX.y+8,VANBOX.w,VANBOX.h,14);ctx.fill();
+  ctx.fillStyle="#e9eef2";rr(VANBOX.x,VANBOX.y,VANBOX.w,VANBOX.h,14);ctx.fill();
+  // cabin on right
+  ctx.fillStyle="#2a3744";rr(VANBOX.x+VANBOX.w-92,VANBOX.y+14,80,VANBOX.h-28,10);ctx.fill();
+  ctx.fillStyle="#0f161d";txtW("CAB",VANBOX.x+VANBOX.w-52,VANBOX.y+VANBOX.h/2+4,11,"#9fb0bf",800,"center");
+  const z=zoneRects(),hov=drag?dropZoneAt(mx,my):null;
+  for(const k of ["A","B","C","D"]){const r=z[k],on=hov===k;
+    ctx.fillStyle=on?ZCOL[k]:"rgba(0,0,0,.06)";ctx.globalAlpha=on?.3:1;rr(r.x,r.y,r.w,r.h,8);ctx.fill();ctx.globalAlpha=1;
+    ctx.strokeStyle=ZCOL[k];ctx.lineWidth=on?3:2;rr(r.x,r.y,r.w,r.h,8);ctx.stroke();
+    txtW(k,r.x+r.w/2,r.y+r.h/2+2,30,ZCOL[k],800,"center");
+    txtW(load.zones[k]+" loaded",r.x+r.w/2,r.y+r.h-12,10.5,C.muted,700,"center");}
+  txtW("← side door (A first out)",z.A.x+z.A.w/2,VANBOX.y+VANBOX.h+16,10.5,C.muted,700,"center");
+  // return bin
+  const rb=RETBIN,onR=hov==="RET";
+  ctx.fillStyle=onR?"rgba(255,107,91,.25)":"rgba(255,107,91,.08)";rr(rb.x,rb.y,rb.w,rb.h,10);ctx.fill();
+  ctx.strokeStyle=C.coral;ctx.lineWidth=onR?3:1.5;ctx.setLineDash([6,6]);rr(rb.x,rb.y,rb.w,rb.h,10);ctx.stroke();ctx.setLineDash([]);
+  txtW("RETURN TO STAFF",rb.x+rb.w/2,rb.y+rb.h/2-2,13,C.coral,800,"center");
+  txtW("missorted / won't scan",rb.x+rb.w/2,rb.y+rb.h/2+18,10.5,C.muted,600,"center");
+  // depart
+  const done=loadComplete();
+  ctx.fillStyle=done?C.teal:"rgba(255,255,255,.06)";rr(DEPART.x,DEPART.y,DEPART.w,DEPART.h,10);ctx.fill();
+  if(!done){ctx.strokeStyle=C.panelLine;rr(DEPART.x,DEPART.y,DEPART.w,DEPART.h,10);ctx.stroke();}
+  txtW(done?"DEPART — start the route":"Load everything to depart",DEPART.x+DEPART.w/2,DEPART.y+DEPART.h/2+5,
+    13.5,done?"#04201d":C.muted,800,"center");
+  // dragging card
+  if(drag)drawParcel(drag.parcel,mx-drag.ox,my-drag.oy,drag.w,drag.h,true);
+  if(toastT>0){ctx.globalAlpha=Math.min(1,toastT*2);panel(VW/2-210,VH-44,420,32,.92);
+    txtW(toast,VW/2,VH-23,12.5,C.ink,700,"center");ctx.globalAlpha=1;}
+}
+function drawParcel(c,x,y,w,h,lift){
+  if(lift){ctx.fillStyle="rgba(0,0,0,.4)";rr(x+3,y+5,w,h,7);ctx.fill();}
+  ctx.fillStyle="#d9c4a0";rr(x,y,w,h,7);ctx.fill();
+  ctx.fillStyle=ZCOL[c.zone];rr(x,y,18,h,7);ctx.fill();ctx.fillRect(x+10,y,8,h);
+  txtW(c.zone,x+9,y+h/2+4,13,"#0f161d",800,"center");
+  ctx.fillStyle="#0f161d";ctx.font="700 10px ui-monospace,Menlo,monospace";ctx.textAlign="left";ctx.fillText(c.id,x+24,y+18);
+  let tag="tap to scan",col="#6b5d44";
+  if(c.scan==="fail"){tag="RETRY";col=C.coral;}
+  else if(c.scan==="ok"){tag="✓ scanned · drag";col="#2f7d4f";}
+  else if(c.scan==="missort"){tag="→ return to staff";col="#c2531a";}
+  ctx.fillStyle=col;ctx.font="700 9.5px -apple-system,system-ui,sans-serif";ctx.fillText(tag,x+24,y+h-10);
+}
+
+/* ===== route flow ===== */
+function placeGuy(){const s=curStop();guy.x=van.x;guy.y=van.y+(s.house.side==="down"?-14:14);}
+function startWalk(){guy.active=true;placeGuy();state="ONFOOT";
+  const s=curStop();setToast(s.type==="ica"?"Walk to the "+pointLabel(s.scen.point):s.type==="locker"?"Walk to the locker":"Walk to the door");}
+function checkParcels(){const need=curStop().parcelIds.slice().sort().join(",");
+  const got=[...selParcels].map(i=>parcelChoices[i].id).sort().join(",");return need===got;}
+function arriveStop(){const s=curStop();
+  if((s.type==="home"||s.type==="ica")&&s.parcelIds.length>1){
+    const req=s.parcelIds.map(id=>({id,req:true}));
+    const others=shuffle(parcels.filter(p=>p.stop!==stopIdx)).slice(0,6-req.length).map(p=>({id:p.id,req:false}));
+    parcelChoices=shuffle(req.concat(others));selParcels=new Set();menuSel=0;
+    state="PARCEL";setToast("Pick the right "+s.parcelIds.length+" parcels for this stop");
+  } else {parcelOK=true;startWalk();}
+}
+function chooseDoor(o){chosenDoorId=o.id;chosenCustId=null;
+  if((o.id==="ring"||o.id==="knock")&&curStop().scen.fam==="answer"){state="DOORWAIT";waitT=1.2;} else resolveStop();}
+function chooseNA(o){ if(o.id==="call"){state="CALLING";waitT=1.3;}
+  else if(o.id==="bell"){na.bell=true;setToast("No answer — calling is the next step, not the bell.");}
+  else if(o.id==="leave"){na.action="leave";resolveStop();}
+  else if(o.id==="fake"){na.action="fake";resolveStop();}
+  else if(o.id==="fail"){na.action="fail";failMenu=buildFailMenu();menuSel=0;state="FAILREASON";} }
+
+/* ===== resolve ===== */
+let resHead="",resScore=0,resNotes=[],resOK=false;
+function finalize(val,notes,ok,delivered,rude,s){
+  const onTime=!s.late;
+  if(!onTime){val-=25;M.sar-=5;notes.push("Late to the stop — the ETA was missed.");}
+  else{M.sar+=2;onTimeCount++;}
+  if(ok&&onTime){M.fdsr+=3;M.dda+=1;}
+  clampM(); if(!ok)errors++;
+  const csat = rude?8 : (delivered?((onTime?100:84)-(ok?0:12)) : (ok?72:45));
+  const add=Math.max(0,Math.round(val));score+=add;lvScore+=add;
+  lvDelivered+=delivered?1:0; lvCsatSum+=csat;
+  career.stops++; career.delivered+=delivered?1:0; career.handledOk+=ok?1:0; career.csatSum+=csat;
+  resHead=ok?(onTime?"HANDLED BY THE BOOK":"CORRECT — BUT LATE"):"NEEDS WORK";
+  resScore=add;resNotes=notes;resOK=ok;s.done=true;state="RESULT";
+}
+function resolveStop(){const s=curStop();
+  if(s.type==="ica")return resolveICA(s); if(s.type==="locker")return resolveLocker(s); return resolveHome(s);}
+function resolveHome(s){const sc=s.scen;let val=150;const notes=[];let ok=true,delivered=true,rude=false;
+  if(!parcelOK){ok=false;delivered=false;val-=80;M.fdsr-=10;M.dda-=4;notes.push("Wrong parcel handed out — someone got another customer's order.");}
+  const doorOdd=DOOR_ODD[chosenDoorId]!==undefined, custOdd=chosenCustId&&CUST_ODD[chosenCustId]!==undefined;
+  if(doorOdd){ok=false;delivered=false;rude=true;val=-90;M.fdsr-=16;M.sar-=12;M.dda-=14;notes.push(ODD_NOTE[chosenDoorId]);}
+  else if(custOdd){ok=false;delivered=false;rude=true;val=-90;M.fdsr-=16;M.sar-=12;M.dda-=14;notes.push(ODD_NOTE[chosenCustId]);}
+  else if(sc.fam==="leave"){const want=sc.photo?"leave_photo":"leave";
+    if(chosenDoorId===want)notes.push("Correct: left at the door"+(sc.photo?" with a proof photo.":", contactless."));
+    else if(sc.photo&&chosenDoorId==="leave"){ok=false;val-=35;M.fdsr-=6;notes.push("Photo proof was required and you skipped it.");}
+    else if(chosenDoorId==="leave_photo"&&!sc.photo){val-=8;notes.push("Minor: photo wasn't needed, but no harm.");}
+    else if(chosenDoorId==="ring"||chosenDoorId==="knock"){val-=20;notes.push("Instruction was contactless — no need to disturb the customer.");}}
+  else if(!sc.absent){
+    if(chosenDoorId==="leave"){ok=false;delivered=false;val-=60;M.fdsr-=8;notes.push("This stop required handing it over — leaving it is a failed delivery.");}
+    else{ if(chosenDoorId!==sc.door){val-=15;notes.push("Minor: instruction said "+(sc.door==="ring"?"ring":"knock")+".");}
+      if(chosenCustId===sc.final)notes.push("Correct: "+FINAL_LABEL[sc.final]+" completed as instructed.");
+      else{ok=false;val-=55;M.fdsr-=8;notes.push("Wrong proof of delivery — this stop needed a "+FINAL_LABEL[sc.final]+".");}}}
+  else{ // absent
+    if(chosenDoorId==="leave"){ok=false;delivered=false;val-=55;M.fdsr-=8;notes.push("You left a personal delivery at the door without even trying contact.");}
+    else{ if(chosenDoorId!==sc.door){val-=10;notes.push("Minor: instruction said "+(sc.door==="ring"?"ring":"knock")+".");}
+      if(na.bell){val-=10;notes.push("You rang repeatedly — don't spam the bell, call the customer instead.");}
+      if(na.action==="fake"){ok=false;delivered=false;rude=true;val=-90;M.fdsr-=16;M.sar-=12;M.dda-=14;notes.push("Marked delivered without delivering — the parcel never reached the customer. Fraud.");}
+      else if(na.action==="leave"){ok=false;delivered=false;val-=55;M.fdsr-=8;notes.push("Personal delivery — you can't abandon it at the door when no one's home.");}
+      else if(na.action==="fail"){ delivered=false;
+        if(na.calls<2){ok=false;val-=35;M.fdsr-=5;notes.push("You must attempt contact — two calls — before failing a personal delivery.");}
+        if(na.reason!=="nothome"){ok=false;val-=30;notes.push("Wrong failure reason — the recipient was simply not home.");}
+        if(na.calls>=2&&na.reason==="nothome")notes.push("Correct: two call attempts, then failed with 'recipient not home'. Not delivered, but handled by the book.");}}}
+  finalize(val,notes,ok,delivered,rude,s);
+}
+function resolveICA(s){const sc=s.scen;let val=150;const notes=[];let ok=true,delivered=true,rude=false;
+  if(!parcelOK){ok=false;delivered=false;val-=80;M.fdsr-=10;notes.push("Wrong parcel for this store.");}
+  if(s.wrongPoint){val-=20;notes.push("You went to the wrong point first — this delivery goes to the "+pointLabel(sc.point)+".");}
+  if(icaChoice==="confirm")notes.push("Correct: handed to staff and confirmed ICA scanned it into their system.");
+  else if(icaChoice==="counter"){ok=false;delivered=false;val=-70;M.fdsr-=14;M.sar-=10;M.dda-=12;
+    notes.push("You marked it delivered without ICA accepting it — the #1 ICA failure. It bounces back to the terminal and strands for days.");}
+  else{ok=false;delivered=false;rude=true;val=-90;M.fdsr-=16;M.sar-=12;M.dda-=14;notes.push("No real handover — a false completion. The store never took the parcel.");}
+  finalize(val,notes,ok,delivered,rude,s);
+}
+function resolveLocker(s){const sc=s.scen;let val=150;const notes=[];let ok=true,delivered=true;
+  if(boxSelNum===sc.box)notes.push("Correct: parcel placed in box "+sc.box+".");
+  else{ok=false;delivered=false;val-=70;M.fdsr-=12;M.dda-=4;
+    notes.push("Wrong box — you used box "+boxSelNum+" but the manifest said box "+sc.box+". The recipient's code won't open that box.");}
+  finalize(val,notes,ok,delivered,false,s);
+}
+function advance(){guy.active=false;chosenDoorId=null;chosenCustId=null;icaChoice=null;na={calls:0,bell:false,action:null,reason:null};
+  if(stopIdx>=route.length-1){ if(quality()<35){state="GAMEOVER";return;} state="SCORECARD";return; }
+  stopIdx++;assignETA();state="DRIVING";setToast("Next: stop "+(stopIdx+1)+" of "+route.length+" · "+typeTag(curStop()));}
+function typeTag(s){return s.type==="ica"?"ICA store":s.type==="locker"?"iBoxen locker":"home delivery";}
+
+/* ===== loop ===== */
+let last=performance.now();
+function loop(now){
+  let dt=(now-last)/1000;last=now;if(dt>0.05)dt=0.05;const f=Math.min(dt*60,3);
+  pulse+=dt;toastT=Math.max(0,toastT-dt);if(hitCd>0)hitCd-=dt;flashT=Math.max(0,flashT-dt);shakeT=Math.max(0,shakeT-dt);
+  if(state==="HIGHWAY")updateHighway(dt,f);
+  else if(state==="TERMINAL")updateTerminal(f);
+  else if(["DRIVING","ONFOOT","DOORWAIT","CALLING"].includes(state)){
+    updatePeds(f);
+    if(state==="DRIVING"){ driveVan(f);const s=curStop();
+      s.timer-=dt;if(s.timer<=0){s.timer=0;if(!s.late){s.late=true;setToast("ETA missed — keep moving");}}
+      if(hitCd<=0&&Math.abs(van.speed)>0.6){for(const p of peds){if(Math.hypot(p.x-van.x,p.y-van.y)<24){
+        M.dda-=8;M.sar-=4;clampM();score=Math.max(0,score-100);lvScore=Math.max(0,lvScore-100);
+        s.timer=Math.max(0,s.timer-8);hitCd=1.3;flashT=0.4;shakeT=0.45;van.speed*=0.25;
+        setToast("PEDESTRIAN INCIDENT — heavy penalty, −8s. Slow down near people.");
+        const np=spawnPed();p.x=np.x;p.y=np.y;break;}}}
+      if(Math.abs(van.speed)>1.2)armDrive=true;
+      const d=Math.hypot(van.x-s.house.parkX,van.y-s.house.parkY);
+      if(armDrive&&d<60&&Math.abs(van.speed)<0.8){van.speed=0;arriveStop();}
+    } else if(state==="ONFOOT"){ walkGuy(f);const s=curStop();
+      if(s.type==="home"){ if(Math.hypot(guy.x-s.house.doorX,guy.y-s.house.doorY)<34){doorMenu=buildDoorMenu(s);menuSel=0;state="DOOR";} }
+      else if(s.type==="locker"){ if(Math.hypot(guy.x-s.house.doorX,guy.y-s.house.doorY)<34){boxSel=0;state="LOCKER";} }
+      else { const cor=s.scen.point==="entrance"?[s.entranceX,s.frontY]:[s.dockX,s.frontY];
+        const wr=s.scen.point==="entrance"?[s.dockX,s.frontY]:[s.entranceX,s.frontY];
+        if(Math.hypot(guy.x-cor[0],guy.y-cor[1])<30){icaMenu=buildICAMenu();menuSel=0;state="ICAHAND";}
+        else if(Math.hypot(guy.x-wr[0],guy.y-wr[1])<30&&!s.wrongPoint){s.wrongPoint=true;
+          setToast("That's the "+pointLabel(s.scen.point==="entrance"?"dock":"entrance")+" — this parcel goes to the "+pointLabel(s.scen.point)+".");} }
+    } else if(state==="DOORWAIT"){ waitT-=dt;if(waitT<=0){ if(curStop().scen.absent){na={calls:0,bell:false,action:null,reason:null};menuSel=0;state="NOANSWER";}
+      else{custMenu=buildCustMenu(curStop());menuSel=0;state="CUST";} } }
+    else if(state==="CALLING"){ waitT-=dt;if(waitT<=0){na.calls++;setToast("Called — no answer.");menuSel=0;state="NOANSWER";} }
+  }
+  render();requestAnimationFrame(loop);
+}
+function driveVan(f){const accel=.13,fr=.94,maxF=3.5,maxR=1.6,turn=.046;
+  if(keys["KeyW"])van.speed+=accel*f; if(keys["KeyS"])van.speed-=accel*f;
+  if(keys["Space"])van.speed*=Math.pow(.86,f);
+  if(!keys["KeyW"]&&!keys["KeyS"]&&!keys["Space"])van.speed*=Math.pow(fr,f);
+  van.speed=Math.max(-maxR,Math.min(maxF,van.speed));
+  const tf=turn*Math.min(1,Math.abs(van.speed))*f*(van.speed<0?-1:1);
+  if(keys["KeyA"])van.angle-=tf; if(keys["KeyD"])van.angle+=tf;
+  let nx=van.x+Math.cos(van.angle)*van.speed*f,ny=van.y+Math.sin(van.angle)*van.speed*f;
+  if(nx>16&&nx<WORLD_W-16&&!blocked(nx,van.y,15))van.x=nx;else van.speed*=.4;
+  if(ny>16&&ny<WORLD_H-16&&!blocked(van.x,ny,15))van.y=ny;else van.speed*=.4;}
+function walkGuy(f){const s=2.3*f;let dx=0,dy=0;
+  if(keys["KeyW"])dy-=1;if(keys["KeyS"])dy+=1;if(keys["KeyA"]){dx-=1;guy.face=-1;}if(keys["KeyD"]){dx+=1;guy.face=1;}
+  if(dx&&dy){dx*=.707;dy*=.707;}
+  const nx=guy.x+dx*s,ny=guy.y+dy*s;
+  if(nx>10&&nx<WORLD_W-10&&!blocked(nx,guy.y,9))guy.x=nx;
+  if(ny>10&&ny<WORLD_H-10&&!blocked(guy.x,ny,9))guy.y=ny;}
+
+/* ===== render dispatch ===== */
+let camX=0,camY=0;
+function camera(){const t=guy.active?guy:van;
+  camX=Math.max(0,Math.min(WORLD_W-VW,t.x-VW/2));camY=Math.max(0,Math.min(WORLD_H-VH,t.y-VH/2));}
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function typeColor(t){return t==="ica"?C.ica:t==="locker"?C.locker:C.teal;}
+function drawVanShape(x,y,angle,sc){sc=sc||1;ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.scale(sc,sc);
+  ctx.fillStyle="rgba(0,0,0,.4)";rr(-22,-12,46,26,6);ctx.fill();
+  ctx.fillStyle=C.teal;rr(-22,-13,44,26,6);ctx.fill();
+  ctx.fillStyle="#0c2b2a";rr(8,-10,12,20,4);ctx.fill();
+  ctx.fillStyle="#bfeee9";rr(15,-8,4,16,2);ctx.fill();
+  ctx.fillStyle=C.tealDeep;ctx.fillRect(-20,-3,26,6);ctx.restore();}
+
+function render(){
+  if(state==="TITLE"){titleCard();return;}
+  if(state==="HIGHWAY"){renderHighway();return;}
+  if(state==="TERMINAL"){renderTerminal();return;}
+  if(state==="CUTSCENE"){renderCutscene();return;}
+  if(state==="LOADING"){renderLoading();return;}
+  // city scene
+  camera();ctx.fillStyle=C.asphalt;ctx.fillRect(0,0,VW,VH);
+  let sx=0,sy=0; if(shakeT>0){const m=shakeT/0.45*7;sx=(Math.random()-.5)*m;sy=(Math.random()-.5)*m;}
+  ctx.save();ctx.translate(-camX+sx,-camY+sy);
+  ctx.fillStyle=C.road;
+  for(const r of roadsV)ctx.fillRect(r-roadHalf,0,roadHalf*2,WORLD_H);
+  for(const r of roadsH)ctx.fillRect(0,r-roadHalf,WORLD_W,roadHalf*2);
+  ctx.strokeStyle=C.line;ctx.lineWidth=3;ctx.setLineDash([22,26]);ctx.beginPath();
+  for(const r of roadsV){ctx.moveTo(r,0);ctx.lineTo(r,WORLD_H);}
+  for(const r of roadsH){ctx.moveTo(0,r);ctx.lineTo(WORLD_W,r);}
+  ctx.stroke();ctx.setLineDash([]);
+  for(const b of blocks){if(b.x+b.w<camX-40||b.x>camX+VW+40||b.y+b.h<camY-40||b.y>camY+VH+40)continue;
+    ctx.fillStyle="rgba(0,0,0,.35)";rr(b.x+5,b.y+7,b.w,b.h,8);ctx.fill();
+    ctx.fillStyle=b.roof;rr(b.x,b.y,b.w,b.h,8);ctx.fill();
+    ctx.fillStyle="rgba(255,255,255,.05)";rr(b.x+6,b.y+6,b.w-12,b.h*.4,6);ctx.fill();}
+  ctx.fillStyle=C.tealDeep;rr(depot.x-26,depot.y-150,52,40,8);ctx.fill();
+  txtW("DEPOT",depot.x,depot.y-124,11,"#04201d",800,"center");
+  if(route.length){
+    if(state==="DRIVING"){const s=curStop();ctx.strokeStyle=typeColor(s.type);ctx.globalAlpha=.5;ctx.lineWidth=3;
+      ctx.setLineDash([10,10]);ctx.beginPath();ctx.moveTo(van.x,van.y);ctx.lineTo(s.house.parkX,s.house.parkY);
+      ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;}
+    route.forEach((s,i)=>{const h=s.house,cur=i===stopIdx;
+      if(h.x+h.w<camX-60||h.x>camX+VW+60||h.y+h.h<camY-60||h.y>camY+VH+60)return;
+      const col=typeColor(s.type),p=.5+.5*Math.sin(pulse*4);
+      if(s.type==="ica"){ctx.fillStyle=C.ica;rr(h.x+h.w/2-22,h.y+8,44,18,4);ctx.fill();txtW("ICA",h.x+h.w/2,h.y+22,12,"#fff",800,"center");}
+      if(s.type==="locker"){ctx.fillStyle=C.locker;rr(h.x+h.w/2-26,h.y+8,52,20,4);ctx.fill();txtW("iBoxen",h.x+h.w/2,h.y+22,11,"#1a1430",800,"center");}
+      if(s.type==="ica"){for(const [k,px] of [["entrance",s.entranceX],["dock",s.dockX]]){const isReq=s.scen.point===k;
+        ctx.fillStyle=isReq&&cur?C.gold:"#54657a";ctx.beginPath();ctx.arc(px,s.frontY,8,0,6.28);ctx.fill();
+        txtW(k==="entrance"?"E":"D",px,s.frontY+4,10,"#0b0f14",800,"center");
+        if(cur)txtW(k==="entrance"?"Entrance":"Goods dock",px,s.frontY+(s.house.side==="down"?22:-14),9.5,isReq?C.gold:C.muted,700,"center");}}
+      ctx.globalAlpha=s.done?.4:cur?1:.6;
+      ctx.fillStyle=s.done?C.muted:cur?col:"#3b5566";ctx.beginPath();ctx.arc(h.doorX,h.doorY,cur?13+3*p:11,0,6.28);ctx.fill();
+      txtW(s.done?"✓":String(i+1),h.doorX,h.doorY+4,12,s.done?C.ink:"#06121a",800,"center");ctx.globalAlpha=1;
+      if(cur&&state==="DRIVING"){ctx.strokeStyle=C.gold;ctx.globalAlpha=.7;ctx.setLineDash([6,6]);
+        ctx.beginPath();ctx.arc(h.parkX,h.parkY,30,0,6.28);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;}});
+  }
+  for(const p of peds){if(p.x<camX-20||p.x>camX+VW+20||p.y<camY-20||p.y>camY+VH+20)continue;
+    ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(p.x,p.y+6,7,3,0,0,6.28);ctx.fill();
+    ctx.fillStyle=p.col;ctx.beginPath();ctx.arc(p.x,p.y,6,0,6.28);ctx.fill();}
+  drawVanShape(van.x,van.y,van.angle);
+  if(guy.active){ctx.save();ctx.translate(guy.x,guy.y);
+    ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(0,9,8,3,0,0,6.28);ctx.fill();
+    ctx.fillStyle=C.teal;rr(-6,-8,12,16,4);ctx.fill();ctx.fillStyle="#f2d3b0";ctx.beginPath();ctx.arc(0,-11,5,0,6.28);ctx.fill();
+    ctx.fillStyle=C.gold;rr(guy.face*5-4,-2,9,9,2);ctx.fill();ctx.restore();}
+  ctx.restore();
+  if(flashT>0){ctx.fillStyle="rgba(255,255,255,"+(flashT*0.5)+")";ctx.fillRect(0,0,VW,VH);}
+  drawRouteHUD();
+}
+
+/* ===== text helpers ===== */
+function panel(x,y,w,h,a){ctx.globalAlpha=a||.92;ctx.fillStyle=C.panel;rr(x,y,w,h,12);ctx.fill();
+  ctx.globalAlpha=1;ctx.strokeStyle=C.panelLine;ctx.lineWidth=1;rr(x,y,w,h,12);ctx.stroke();}
+function txt(s,x,y,sz,col,wt,al){ctx.fillStyle=col||C.ink;
+  ctx.font=(wt||600)+" "+sz+"px -apple-system,Segoe UI,system-ui,sans-serif";ctx.textAlign=al||"left";
+  ctx.textBaseline="alphabetic";ctx.fillText(s,x,y);}
+function txtW(s,x,y,sz,col,wt,al){txt(s,x,y,sz,col,wt,al);ctx.textAlign="left";}
+function mono(s,x,y,sz,col,al){ctx.fillStyle=col||C.ink;ctx.font="600 "+sz+"px ui-monospace,Menlo,monospace";
+  ctx.textAlign=al||"left";ctx.fillText(s,x,y);ctx.textAlign="left";}
+function bar(x,y,w,h,v,col){ctx.fillStyle="rgba(255,255,255,.08)";rr(x,y,w,h,h/2);ctx.fill();
+  ctx.fillStyle=col;rr(x,y,Math.max(2,w*Math.max(0,Math.min(100,v))/100),h,h/2);ctx.fill();}
+function wrapText(s,x,y,maxW,sz,col){ctx.fillStyle=col;
+  ctx.font="600 "+sz+"px -apple-system,Segoe UI,system-ui,sans-serif";ctx.textAlign="left";
+  const words=s.split(" ");let line="",yy=y;
+  for(const w of words){const t=line?line+" "+w:w;
+    if(ctx.measureText(t).width>maxW&&line){ctx.fillText(line,x,yy);line=w;yy+=sz+4;}else line=t;}
+  ctx.fillText(line,x,yy);return yy;}
+
+/* ===== route HUD + cards ===== */
+function drawRouteHUD(){
+  panel(VW/2-170,14,340,52,.92);
+  txt("LEVEL",VW/2-152,34,11,C.muted,700);mono(String(level),VW/2-152,56,20,C.teal);
+  txt("STOP",VW/2-96,34,11,C.muted,700);mono(Math.min(stopIdx+1,route.length)+"/"+route.length,VW/2-96,56,18,C.ink);
+  txt("SCORE",VW/2-20,34,11,C.muted,700);mono(String(score),VW/2-20,56,18,C.ink);
+  txt("ETA",VW/2+96,34,11,C.muted,700);
+  const tm=route.length?curStop().timer:0;
+  mono(Math.max(0,Math.ceil(tm))+"s",VW/2+96,56,20,tm<6?C.coral:tm<12?C.gold:C.teal);
+  drawMeters(VW-214,14);
+  if(route.length&&!["SCORECARD","GAMEOVER"].includes(state)){const s=curStop(),col=typeColor(s.type);
+    panel(14,14,300,100,.92);
+    txt("STOP "+(stopIdx+1)+" — "+typeTag(s).toUpperCase(),26,34,11,col,800);
+    txt((s.type==="ica"?s.scen.store:s.type==="locker"?("iBoxen · "+s.addr):(s.name+" · "+s.addr)),26,52,13,C.ink,700);
+    txt("Parcels: "+s.parcelIds.join(", "),26,70,12,C.muted,600);
+    wrapText(s.txt,26,88,288,12.5,C.muted);}
+  if(state==="PARCEL")parcelCard();
+  else if(state==="DRIVING")prompt(curStop().late?"ETA missed — get to the stop":"Drive to stop "+(stopIdx+1)+" · brake in the gold zone to park");
+  else if(state==="ONFOOT")prompt(curStop().type==="ica"?"Walk to the right point — read the manifest":curStop().type==="locker"?"Walk to the locker":"Walk to the door");
+  else if(state==="DOORWAIT")prompt(chosenDoorId==="ring"?"Ringing…":"Knocking…");
+  else if(state==="CALLING")prompt("Calling the customer…");
+  else if(state==="DOOR")menu("At the door — what do you do?",doorMenu);
+  else if(state==="CUST")menu(curStop().name+" opens the door",custMenu);
+  else if(state==="ICAHAND")menu("At the "+pointLabel(curStop().scen.point)+" — hand over how?",icaMenu);
+  else if(state==="NOANSWER")menu("No one answers. Next move?",buildNAMenu());
+  else if(state==="FAILREASON")menu("Failing the delivery — select the reason",failMenu);
+  else if(state==="LOCKER")lockerCard();
+  else if(state==="RESULT")resultCard();
+  else if(state==="SCORECARD")scoreCard();
+  else if(state==="GAMEOVER")gameoverCard();
+  if(toastT>0&&!["SCORECARD","GAMEOVER"].includes(state)){ctx.globalAlpha=Math.min(1,toastT*2);
+    panel(VW/2-210,VH-150,420,34,.9);txtW(toast,VW/2,VH-128,12.5,C.ink,700,"center");ctx.globalAlpha=1;}
+}
+function drawMeters(x,y){panel(x,y,200,128,.92);txt("SERVICE QUALITY",x+14,y+24,11,C.muted,800);
+  const q=quality(),qc=q>=80?C.teal:q>=60?C.gold:C.coral;mono(q+"%",x+186,y+24,16,qc,"right");bar(x+14,y+30,172,8,q,qc);
+  const rows=[["SAR",M.sar],["FDSR",M.fdsr],["DDA",M.dda]];let yy=y+58;
+  for(const[lab,v]of rows){txt(lab,x+14,yy+10,11,C.ink,700);mono(Math.round(v)+"",x+186,yy+10,11,C.muted,"right");bar(x+14,yy+14,172,5,v,C.tealDeep);yy+=22;}}
+function prompt(s){panel(VW/2-230,VH-58,460,40,.92);txtW(s,VW/2,VH-32,13.5,C.ink,700,"center");}
+function menu(title,opts){const w=380,h=64+opts.length*38,x=VW/2-w/2,y=VH-h-16;
+  panel(x,y,w,h,.96);txt(title,x+20,y+30,14,C.teal,800);
+  opts.forEach((o,i)=>{const oy=y+48+i*38,sel=i===menuSel;
+    ctx.fillStyle=sel?"rgba(30,214,196,.16)":"transparent";rr(x+12,oy-6,w-24,32,8);ctx.fill();
+    if(sel){ctx.strokeStyle=C.teal;ctx.lineWidth=1.5;rr(x+12,oy-6,w-24,32,8);ctx.stroke();}
+    txt((sel?"▶  ":"     ")+o.t,x+22,oy+14,13,o.odd?C.coral:C.ink,sel?700:600);});}
+function parcelCard(){const s=curStop(),need=s.parcelIds.length;
+  const w=420,h=120+parcelChoices.length*34+34,x=VW/2-w/2,y=VH-h-16;panel(x,y,w,h,.97);
+  txt("PICK FROM THE VAN",x+20,y+28,13,C.teal,800);txt("This stop needs "+need+": "+s.parcelIds.join(", "),x+20,y+48,12.5,C.muted,600);
+  parcelChoices.forEach((p,i)=>{const oy=y+64+i*34,sel=i===menuSel,on=selParcels.has(i);
+    ctx.fillStyle=sel?"rgba(30,214,196,.16)":"transparent";rr(x+12,oy-4,w-24,30,8);ctx.fill();
+    if(sel){ctx.strokeStyle=C.teal;ctx.lineWidth=1.5;rr(x+12,oy-4,w-24,30,8);ctx.stroke();}
+    ctx.strokeStyle=on?C.teal:C.muted;ctx.lineWidth=2;rr(x+22,oy+2,16,16,4);ctx.stroke();
+    if(on)txtW("✓",x+30,oy+15,13,C.teal,800,"center");mono(p.id,x+50,oy+15,14,C.ink);});
+  const cy=y+64+parcelChoices.length*34,csel=menuSel===parcelChoices.length;
+  ctx.fillStyle=csel?C.teal:"rgba(30,214,196,.2)";rr(x+12,cy-4,w-24,28,8);ctx.fill();
+  txtW("Load selected ("+selParcels.size+"/"+need+")",VW/2,cy+15,13,csel?"#04201d":C.ink,800,"center");}
+function lockerCard(){const s=curStop();const cols=4,rows=3,cw=70,ch=46,gap=8;
+  const gw=cols*cw+(cols-1)*gap,w=gw+48,h=ch*rows+(rows-1)*gap+86,x=VW/2-w/2,y=VH-h-16;panel(x,y,w,h,.97);
+  txt("iBoxen — place in box "+s.scen.box,x+24,y+30,14,C.locker,800);
+  txt("←↑↓→ to choose · Enter to place",x+24,y+50,11.5,C.muted,600);
+  const gx=x+24,gy=y+62;
+  for(let i=0;i<cols*rows;i++){const c=i%cols,r=Math.floor(i/cols),bx=gx+c*(cw+gap),by=gy+r*(ch+gap),sel=i===boxSel;
+    ctx.fillStyle=sel?"rgba(154,139,240,.28)":"rgba(255,255,255,.05)";rr(bx,by,cw,ch,8);ctx.fill();
+    ctx.strokeStyle=sel?C.locker:C.panelLine;ctx.lineWidth=sel?2:1;rr(bx,by,cw,ch,8);ctx.stroke();
+    mono(String(i+1),bx+cw/2,by+ch/2+6,16,sel?C.ink:C.muted,"center");}}
+function resultCard(){const w=470,h=110+resNotes.length*34,x=VW/2-w/2,y=VH/2-h/2;panel(x,y,w,h,.97);
+  txt(resHead,x+24,y+34,15,resOK?C.teal:C.coral,800);mono("+"+resScore+" pts",x+w-24,y+34,16,C.teal,"right");
+  let yy=y+62;for(const n of resNotes){ctx.fillStyle=C.gold;ctx.beginPath();ctx.arc(x+30,yy-4,3,0,6.28);ctx.fill();
+    yy=wrapText(n,x+42,yy,w-66,12.5,C.muted)+18;}
+  txt("Press Enter — continue",x+24,y+h-18,12.5,C.muted,600);txt("Service Quality "+quality()+"%",x+w-24,y+h-18,12.5,C.muted,600,"right");ctx.textAlign="left";}
+function scoreCard(){
+  ctx.fillStyle="rgba(8,12,16,.78)";ctx.fillRect(0,0,VW,VH);
+  const w=560,h=380,x=VW/2-w/2,y=VH/2-h/2;panel(x,y,w,h,.98);
+  txt("LEVEL "+level+" SCORECARD",x+28,y+40,20,C.teal,800);
+  const dr=Math.round(lvDelivered/route.length*100), ot=Math.round(onTimeCount/route.length*100), cs=Math.round(lvCsatSum/route.length);
+  const rows=[["Delivered",lvDelivered+"/"+route.length],["Delivery rate",dr+"%"],["On-time",ot+"%"],
+    ["Errors",String(errors)],["Loading accuracy",loadAcc+"%"],["Customer satisfaction",cs+"%"],["Service Quality",quality()+"%"]];
+  let yy=y+74; for(const [k,v] of rows){txt(k,x+28,yy,13,C.muted,600);
+    mono(v,x+250,yy,14,(k==="Delivery rate"&&dr>=99)||(k==="Customer satisfaction"&&cs>=90)?C.teal:C.ink);yy+=26;}
+  // career + certification
+  const cr=career.stops?Math.round(career.delivered/career.stops*100):0, ccs=career.stops?Math.round(career.csatSum/career.stops):0;
+  const cert = career.stops>=15 && cr>=99 && ccs>=90;
+  const cx2=x+330,cw2=200,cy2=y+74;
+  panel(cx2,cy2,cw2,h-110,.6);
+  txt("CERTIFICATION",cx2+16,cy2+26,12,C.gold,800);
+  txt("Career delivery rate",cx2+16,cy2+52,11.5,C.muted,600);mono(cr+"%",cx2+cw2-16,cy2+52,15,cr>=99?C.teal:C.ink,"right");
+  bar(cx2+16,cy2+60,cw2-32,7,cr,cr>=99?C.teal:C.gold);
+  txt("Career CSAT",cx2+16,cy2+92,11.5,C.muted,600);mono(ccs+"%",cx2+cw2-16,cy2+92,15,ccs>=90?C.teal:C.ink,"right");
+  bar(cx2+16,cy2+100,cw2-32,7,ccs,ccs>=90?C.teal:C.gold);
+  txt("Target: 99% delivery · 90% CSAT",cx2+16,cy2+128,10.5,C.muted,600);
+  txt(cert?"✓ CERTIFIED TO DRIVE":"Not yet certified",cx2+16,cy2+158,14,cert?C.teal:C.coral,800);
+  const pass = dr>=99 && cs>=90;
+  txt(pass?"Level passed — 99% standard met.":"Below the 99% standard — keep training.",x+28,y+h-52,13,pass?C.teal:C.gold,700);
+  ctx.fillStyle=C.teal;rr(x+28,y+h-40,210,30,8);ctx.fill();
+  txt("Press Enter — next level",x+38,y+h-20,13,"#04201d",800);
+}
+function gameoverCard(){ctx.fillStyle="rgba(8,12,16,.8)";ctx.fillRect(0,0,VW,VH);
+  const w=440,h=160,x=VW/2-w/2,y=VH/2-h/2;panel(x,y,w,h,.98);
+  txt("ROUTE TERMINATED",x+24,y+38,20,C.coral,800);
+  wrapText("Service quality dropped below the acceptable threshold. In real life, that's a service review.",x+24,y+64,w-48,13,C.ink);
+  mono("Final score "+score,x+24,y+h-44,16,C.ink);
+  txt("Press Enter — restart training",x+w-24,y+h-24,12.5,C.muted,600,"right");ctx.textAlign="left";}
+function titleCard(){ctx.fillStyle=C.asphalt;ctx.fillRect(0,0,VW,VH);
+  const w=560,h=290,x=VW/2-w/2,y=VH/2-h/2;panel(x,y,w,h,.96);
+  txt("COURIER TRAINING",x+30,y+50,30,C.ink,800);txt("DELIVERY SIM",x+30,y+74,15,C.teal,800);
+  wrapText("A full shift: drive the highway to the terminal, check in and find your cage, load the van by zone in the loading game, then run a 15-stop mixed route — home, ICA collection points and iBoxen lockers.",x+30,y+102,w-60,13,C.muted);
+  wrapText("Deliver exactly as instructed, beat the ETA, never falsely complete. Certify when your career hits a 99% delivery rate with 90%+ customer satisfaction.",x+30,y+158,w-60,13,C.muted);
+  ctx.fillStyle=C.teal;rr(x+30,y+h-44,180,30,8);ctx.fill();txt("Press Enter to start",x+40,y+h-24,13.5,"#04201d",800);}
+
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
