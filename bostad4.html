@@ -9,7 +9,7 @@
 :root{
   color-scheme: light;
   --page:#f9f9f7; --surface:#fcfcfb;
-  --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --ink:#0b0b0b; --ink2:#4a4946; --muted:#6b6963;
   --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
   --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
   --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
@@ -20,7 +20,7 @@
   :root:where(:not([data-theme="light"])){
     color-scheme: dark;
     --page:#0d0d0d; --surface:#1a1a19;
-    --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+    --ink:#ffffff; --ink2:#c9c8be; --muted:#a3a199;
     --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
     --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
     --div-lo:#3987e5; --div-hi:#e66767; --div-mid:#383835;
@@ -30,7 +30,7 @@
 :root[data-theme="dark"]{
   color-scheme: dark;
   --page:#0d0d0d; --surface:#1a1a19;
-  --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+  --ink:#ffffff; --ink2:#c9c8be; --muted:#a3a199;
   --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
   --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
   --div-lo:#3987e5; --div-hi:#e66767; --div-mid:#383835;
@@ -66,6 +66,13 @@ select,input[type=number]{background:var(--surface);color:var(--ink);
 label.tog{display:inline-flex;gap:7px;align-items:center;font-size:13.5px;color:var(--ink2);cursor:pointer}
 
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:22px}
+@media(max-width:700px){
+  .tiles{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+  .tiles .card{padding:12px 14px}
+  .tile .v{font-size:23px;margin-top:3px}
+  .tile .k{font-size:10.5px}
+  .tile .d{font-size:11.5px;margin-top:3px}
+}
 .tile .k{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .tile .v{font-size:30px;font-weight:600;letter-spacing:-.02em;margin-top:6px;line-height:1.1}
 .tile .d{font-size:12.5px;color:var(--ink2);margin-top:4px}
@@ -136,7 +143,15 @@ details.card>summary .chev{color:var(--muted);transition:transform .15s;flex:non
 details.card[open]>summary .chev{transform:rotate(90deg)}
 details.card>summary:hover{background:color-mix(in srgb,var(--s1) 5%,transparent)}
 details.card>.body{padding:0 20px 18px}
-@media(max-width:700px){details.card>summary{padding:14px}details.card>.body{padding:0 14px 14px}}
+@media(max-width:700px){
+  details.card>summary{padding:14px}
+  details.card>.body{padding:0 14px 14px}
+  .wrap{padding:18px 14px 60px}
+  .topbar h1{font-size:21px;line-height:1.2}
+  .topbar{gap:10px}
+  #crit,#stamp{font-size:12px;line-height:1.45}
+  #theme{font-size:11.5px;padding:4px 9px;opacity:.6}
+}
 .searchbox{background:var(--surface);color:var(--ink);border:1px solid var(--border);
   border-radius:8px;padding:7px 10px;font:inherit;font-size:13.5px;min-width:170px}
 
@@ -171,8 +186,14 @@ details.card>.body{padding:0 20px 18px}
 
 /* ---- responsivt ---- */
 .c-sm{display:none}
-@media(max-width:1320px){ th.c-lg,td.c-lg{display:none} }
-@media(max-width:980px){
+@media(max-width:1560px){ th.c-xl,td.c-xl{display:none} }
+@media(max-width:1320px){
+  th.c-lg,td.c-lg{display:none}
+  /* the last 40px of overflow is cheaper to take out of the gutters than out
+     of another column */
+  #tbl th,#tbl td{padding-left:6px;padding-right:6px}
+}
+@media(max-width:1100px){
   th.c-md,td.c-md{display:none}
   th.c-xs,td.c-xs{display:none}
   #mapwrap{height:400px}
@@ -227,6 +248,24 @@ details.card>.body{padding:0 20px 18px}
 #who label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 4px}
 #who input{width:100%;background:var(--surface);color:var(--ink);border:1px solid var(--border);
   border-radius:8px;padding:9px 12px;font:inherit;font-size:15px;margin-bottom:12px}
+tr.detail td{position:sticky;left:0;padding:0!important}
+tr.detail .dwrap{width:calc(100vw - 40px);max-width:1600px;padding:16px 14px 18px;
+  white-space:normal}
+@media(max-width:700px){tr.detail .dwrap{width:calc(100vw - 28px);padding:14px 12px}}
+
+.recform{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px 12px}
+.recform .rf{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+.recform .rf input,.recform .rf select{font-size:13.5px;padding:6px 9px;width:100%;
+  background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:7px}
+details.sub{border-top:1px solid var(--grid);padding-top:10px;margin-top:10px}
+details.sub>summary{cursor:pointer;font-size:13px;font-weight:600;list-style:none;
+  display:flex;justify-content:space-between;align-items:center;gap:8px}
+details.sub>summary::-webkit-details-marker{display:none}
+details.sub>summary::after{content:'›';color:var(--muted);transition:transform .15s}
+details.sub[open]>summary::after{transform:rotate(90deg)}
+details.sub>div{padding-top:10px}
+.sumtag{font-weight:400;color:var(--muted);font-size:12px}
+
 #swipehero{display:none;width:100%;text-align:left;align-items:center;gap:16px;
   margin:0 0 18px;padding:14px 18px;border-radius:14px;cursor:pointer;font:inherit;
   border:1px solid var(--s1);color:var(--ink);
@@ -270,6 +309,7 @@ details.card>.body{padding:0 20px 18px}
   padding:11px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px}
 .statusbar .who{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink2)}
 .statusbar .grow{flex:1 1 20px}
+.statusbar .legend-note{flex-basis:100%;font-size:12px;color:var(--muted);line-height:1.5}
 .sfilter{display:flex;gap:6px;flex-wrap:wrap}
 .chip .n{font-variant-numeric:tabular-nums;opacity:.6;font-size:11.5px}
 .chip.big{padding:7px 14px;font-size:13.5px}
@@ -290,8 +330,14 @@ tr.row.isout td{opacity:.45}
 
 .thumb{width:66px;height:50px;object-fit:cover;border-radius:6px;display:block;
   background:var(--grid);border:1px solid var(--border)}
-td.c-th,th.c-th{width:66px;padding-right:6px}
-@media(max-width:700px){.thumb{width:50px;height:38px}td.c-th,th.c-th{width:50px}}
+td.c-th,th.c-th{width:70px;padding-right:6px;vertical-align:top}
+td.c-th .sbtns{margin-top:5px;gap:3px}
+td.c-th .sbtn{min-width:33px;height:33px;padding:0}
+@media(max-width:700px){
+  .thumb{width:56px;height:42px}
+  td.c-th,th.c-th{width:58px}
+  td.c-th .sbtn{min-width:26px;height:30px;font-size:13px}
+}
 .shots{display:flex;gap:6px;overflow-x:auto;margin:0 0 12px;padding-bottom:2px}
 .shots img{height:112px;border-radius:8px;border:1px solid var(--border);flex:0 0 auto}
 
@@ -406,7 +452,15 @@ td.c-th,th.c-th{width:66px;padding-right:6px}
     <label>Ränta, % <input type="number" id="hhint" step="0.05" min="0" max="15"></label>
     <label>Drift, kr/mån <input type="number" id="hhdrift" step="100" min="0"></label>
     <label>Maxpris, Mkr <input type="number" id="hhbudget" step="0.5" min="0"></label>
+    <label>Lånelöfte, Mkr <input type="number" id="hhpromise" step="0.1" min="0" placeholder="ej angivet"></label>
+    <label>Stressränta, % <input type="number" id="hhstress" step="0.5" min="0" max="20"></label>
+    <label>Netto vid försäljning, Mkr <input type="number" id="hhsale" step="0.1" min="0" placeholder="0"></label>
   </div>
+  <p class="note" style="margin:12px 0 0">
+    Lånelöftet är vad banken faktiskt sagt ja till — objekt som kräver mer flaggas.
+    Stressräntan är den nivå banken prövar er mot, inte dagens; 6–7 % är normalt.
+    Netto vid försäljning är vad som blir kvar efter mäklararvode, kvarvarande lån
+    och 22 % vinstskatt, och läggs till kontantinsatsen.</p>
   <p class="note" id="hhsummary" style="margin:14px 0 0"></p>
   </div>
 </details>
@@ -437,6 +491,10 @@ td.c-th,th.c-th{width:66px;padding-right:6px}
     <input type="search" class="searchbox" id="fq" placeholder="t.ex. Götgatan">
   </div>
   <div class="fgroup">
+    <span class="flabel">Max utgångspris, Mkr</span>
+    <input type="number" id="fprice" step="0.5" min="0" placeholder="alla">
+  </div>
+  <div class="fgroup">
     <span class="flabel">Sortering</span>
     <select id="fsort">
       <option value="score">Bäst värde först</option>
@@ -446,13 +504,17 @@ td.c-th,th.c-th{width:66px;padding-right:6px}
       <option value="new">Senast publicerad</option>
       <option value="sqmprice">Lägst kr/m²</option>
       <option value="era">Äldst hus först</option>
+      <option value="showing">Närmaste visning</option>
     </select>
   </div>
   <label class="tog"><input type="checkbox" id="faff" checked> Bara sådana ni har råd med</label>
   <label class="tog"><input type="checkbox" id="fshow"> Bara med visning inbokad</label>
+  <label class="tog"><input type="checkbox" id="fweek"> Visning inom 7 dagar</label>
 </div>
   </div>
 </details>
+
+<div class="statusbar" id="statusbar"></div>
 
 <div class="tiles" id="tiles"></div>
 
@@ -466,7 +528,7 @@ td.c-th,th.c-th{width:66px;padding-right:6px}
   </div>
 </div>
 
-<div class="statusbar" id="statusbar"></div>
+
 
 <div class="deck">
 <div class="card" id="mapcard">
@@ -546,14 +608,16 @@ td.c-th,th.c-th{width:66px;padding-right:6px}
         <th class="c-sm-hide" data-k="rel_premium">Mot marknad</th>
         <th class="c-xs" data-k="expected_final">Förv. slutpris</th>
         <th data-k="monthly_incl">kr/mån</th>
-        <th class="c-lg" data-k="monthly_excl">ex. amort</th>
+        <th class="c-xl" data-k="monthly_excl">ex. amort</th>
         <th class="l c-xs" data-k="days">Inkom</th>
-        <th class="l">Ni</th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
-  <div class="empty" id="empty" hidden>Inga objekt matchar filtren.</div>
+  <div class="empty" id="empty" hidden>
+    <p style="margin:0 0 12px">Inga objekt matchar filtren.</p>
+    <button class="chip" id="fclear">Rensa alla filter</button>
+  </div>
 </div>
 
 <footer>
@@ -733,6 +797,12 @@ const DEFAULT_CFG = {
   buyers: (A0.default_buyers||[]).map(b=>({name:b.name, cash:b.cash, net:b.net})),
   interest: A0.interest, drift: A0.drift_monthly, budget: A0.max_budget,
   splitRunning: A0.split_running, splitAmort: A0.split_amort, ownership: A0.ownership,
+  // What the bank actually said, and what the deal actually costs to close.
+  // These stay in the fragment with the rest of the money — never in the sheet,
+  // which is readable by anyone holding its link.
+  loanPromise: null,   // lånelöfte, kr
+  stressRate: 0.065,   // the rate the bank tests you against, not today's rate
+  saleNet: 0,          // net proceeds from selling what you live in now
 };
 let CFG = readHash() || JSON.parse(JSON.stringify(DEFAULT_CFG));
 
@@ -784,7 +854,7 @@ function shares(key){
 }
 
 function finance(price, fee){
-  const cash = CFG.buyers.reduce((a,b)=>a+(+b.cash||0),0);
+  const cash = CFG.buyers.reduce((a,b)=>a+(+b.cash||0),0) + (+CFG.saleNet || 0);
   const loan = Math.max(0, price - cash);
   const ltv  = price ? loan/price : 0;
   const interestYr = loan * CFG.interest;
@@ -809,7 +879,25 @@ function finance(price, fee){
             pctOfNet: b.net>0 ? (run+am)/b.net : null,
             wr:wr[i], wa:wa[i], own:own[i]};
   });
+  // What the bank tests you against. 2,5 % is today's rate; the calculation
+  // that decides whether you get the loan at all uses something near 6,5 %,
+  // and so should the question "could we still live here if it turns".
+  const sRate = +CFG.stressRate || 0;
+  const sInterestYr = loan * sRate;
+  const sReliefYr = own.reduce((a,w)=>{
+    const part = sInterestYr*w;
+    return a + Math.min(part, RULES.ranteavdragCap)*RULES.ranteavdragHi
+             + Math.max(0, part-RULES.ranteavdragCap)*RULES.ranteavdragLo; }, 0);
+  const stressTotal = (sInterestYr - sReliefYr)/12 + fee + CFG.drift + amort;
+  const netTotal = CFG.buyers.reduce((a,b)=>a+(+b.net||0), 0);
+  const promise = +CFG.loanPromise || 0;
+
   return {price, cash, loan, ltv, feasible: ltv <= RULES.bolanetak+1e-9,
+          deposit: price*0.10,
+          stressRate: sRate, stressTotal,
+          stressShare: netTotal > 0 ? stressTotal/netTotal : null,
+          overPromise: promise > 0 && loan > promise,
+          promiseGap: promise > 0 ? loan - promise : null,
           amortPct: amortRate(ltv), interestGross: interestYr/12,
           interestNet, relief: reliefYr/12,
           reliefEff: interestYr ? reliefYr/interestYr : 0,
@@ -986,6 +1074,9 @@ function syncControls(){
   document.getElementById('hhint').value    = (CFG.interest*100).toFixed(2).replace(/0$/,'');
   document.getElementById('hhdrift').value  = CFG.drift;
   document.getElementById('hhbudget').value = (CFG.budget/1e6);
+  document.getElementById('hhpromise').value = CFG.loanPromise ? (CFG.loanPromise/1e6) : '';
+  document.getElementById('hhstress').value  = ((CFG.stressRate||0)*100).toFixed(1).replace(/\.0$/,'');
+  document.getElementById('hhsale').value    = CFG.saleNet ? (CFG.saleNet/1e6) : '';
 }
 
 function hhSummary(){
@@ -1027,6 +1118,15 @@ document.getElementById('hhcopy').onclick = async (e)=>{
   setTimeout(()=>{e.target.textContent='Kopiera länk med dessa siffror';},2200);
 };
 document.getElementById('hhrun').onchange   = e=>{CFG.splitRunning=e.target.value; applyCfg(false);};
+document.getElementById('hhpromise').oninput = e=>{
+  const v = parseFloat(String(e.target.value).replace(',','.'));
+  CFG.loanPromise = isFinite(v) && v>0 ? v*1e6 : null; applyCfg(false); };
+document.getElementById('hhstress').oninput = e=>{
+  const v = parseFloat(String(e.target.value).replace(',','.'));
+  CFG.stressRate = isFinite(v) && v>=0 ? v/100 : 0; applyCfg(false); };
+document.getElementById('hhsale').oninput = e=>{
+  const v = parseFloat(String(e.target.value).replace(',','.'));
+  CFG.saleNet = isFinite(v) && v>0 ? v*1e6 : 0; applyCfg(false); };
 document.getElementById('hhamort').onchange = e=>{CFG.splitAmort=e.target.value; applyCfg(false);};
 document.getElementById('hhown').onchange   = e=>{CFG.ownership=e.target.value; applyCfg(false);};
 document.getElementById('hhint').oninput    = e=>{CFG.interest=(+e.target.value||0)/100; applyCfg(false);};
@@ -1040,7 +1140,7 @@ const roomBands = [['2','2–2,5 rok'],['3','3–3,5 rok'],['4','4+ rok']];
 const eraBands = [['pre','före 1950'],['post','1950 och senare'],
                   ['A','–1929'],['B','1930–49'],['C','1950–79'],['D','1980–'],['U','okänt']];
 const state = {dist:new Set(), rooms:new Set(), eras:new Set(), max:null, aff:true,
-               sort:'score', q:'', view:'aktiva', showing:false};
+               sort:'score', q:'', view:'aktiva', showing:false, week:false, maxPrice:null};
 
 function chips(el, items, set){
   el.innerHTML = items.map(([v,label,n])=>
@@ -1064,6 +1164,12 @@ document.getElementById('fmax').oninput = e => {
   state.max = e.target.value ? +e.target.value : null; render(); };
 document.getElementById('faff').onchange = e => { state.aff = e.target.checked; render(); };
 document.getElementById('fshow').onchange = e => { state.showing = e.target.checked; render(); };
+document.getElementById('fweek').onchange = e => { state.week = e.target.checked; render(); };
+document.getElementById('fprice').oninput = e => {
+  const v = parseFloat(String(e.target.value).replace(',', '.'));
+  state.maxPrice = isFinite(v) && v > 0 ? v * 1e6 : null;
+  render();
+};
 document.getElementById('swipehero').onclick = () => swipeOpen();
 document.getElementById('swclose').onclick = swipeClose;
 document.getElementById('swyes').onclick  = () => swipeMark('yes');
@@ -1230,7 +1336,7 @@ function collective(id){
 }
 const COLL = {
   confirmed:['Bekräftad','b-conf'], qualified:['Kvalificerad','b-qual'],
-  split:['Oense','b-split'], out:['Bortvald','b-out'], new:['',''],
+  split:['Oense','b-split'], out:['Dold','b-out'], new:['',''],
 };
 const VIEWS = {
   aktiva:        c => c !== 'out',
@@ -1348,7 +1454,7 @@ function swipeDraw(){
         r.rooms==null?'—':String(r.rooms).replace('.',',')} rok</span><span>${
         esc(r.era_label)}</span><span>avgift ${kr(r.fee)}</span></div>
       <div class="cost">${kr(a.total)} kr/mån <span style="font-size:13px;font-weight:400;color:var(--ink2)">inkl. amortering</span></div>
-      <div class="facts"><span>${r.ask?msek(r.ask)+' Mkr utgång':'inget utgångspris'}</span>
+      <div class="facts"><span>${r.ask?msek(r.ask)+'kr utgång':'inget utgångspris'}</span>
         <span>${verdict(r)}</span>${f&&!f.past?`<span style="color:var(--warning)">visning ${f.when}${f.time?' kl '+f.time:''}</span>`:''}</div>
       <div class="facts"><a href="${r.url}" target="_blank" rel="noopener" style="color:var(--s1)">Öppna på Booli ↗</a></div>
     </div></div>`;
@@ -1489,7 +1595,7 @@ function askIdentity(done){
       box.hidden = true;
       done();
       const others = USERS().filter(u => u !== me());
-      if(others.length) toast(`Skicka ${others[0]}s länk — knappen finns överst`);
+      if(others.length) toast(`Klart. Skicka sedan ${others[0]}s länk med knappen ovanför listan.`);
     });
   }
 
@@ -1521,6 +1627,8 @@ function askIdentity(done){
     });
     saveIdentity();
     writeHash();
+    renderBuyers();   // the card still said "Person 1" until now
+    hhSummary();
     showPick();
   };
   document.getElementById('wngo').onclick = go;
@@ -1529,6 +1637,159 @@ function askIdentity(done){
   });
 }
 
+
+
+/* ---------- shared facts about an object ----------
+   Marks, notes about the association, an agreed walk-away price and a viewing
+   protocol are all the same shape: something one of you writes down that the
+   other must see. They travel through the same append-only log and the same
+   Apps Script, so nothing new had to be deployed — a record whose state starts
+   with "~" carries JSON in the comment column instead of a heart.
+
+   Last write wins per (object, kind). These are joint facts, not opinions, so
+   they are not split per person the way ♥ and ✕ are; the log still records who
+   wrote them last. */
+const KINDS = {brf:'~brf', max:'~max', show:'~visning'};
+
+function getRec(id, kind){
+  let best = null;
+  for(const m of MARKS.log)
+    if(m.id === id && m.state === KINDS[kind] && (!best || m.ts > best.ts)) best = m;
+  if(!best) return null;
+  try{ const o = JSON.parse(best.comment || '{}'); o._by = best.user; o._ts = best.ts; return o; }
+  catch(e){ return null; }
+}
+function setRec(id, kind, obj){
+  const clean = {};
+  for(const [k,v] of Object.entries(obj))
+    if(!k.startsWith('_') && v !== '' && v != null) clean[k] = v;
+  const m = {id, user: me(), state: KINDS[kind],
+             comment: JSON.stringify(clean), ts: Date.now()};
+  MARKS.log.push(m); MARKS.save(); MARKS.send(m);
+}
+
+/* Debt per square metre is the number that turns a cheap flat expensive.
+   Under ~5 000 kr/m² is healthy, over ~15 000 is an increase that has not
+   happened yet. The bands come from what lenders and BRF analysts use; they
+   are a rule of thumb, not a law. */
+function brfRisk(b){
+  if(!b) return null;
+  const flags = [];
+  const d = +b.debt || 0;
+  if(d > 15000) flags.push(['hög skuld', 'bad']);
+  else if(d > 5000) flags.push(['skuld ' + kr(d) + ' kr/m²', 'warn']);
+  if(b.tomtratt === 'ja') flags.push(['tomträtt', 'warn']);
+  if(b.raise === 'ja') flags.push(['avgiftshöjning aviserad', 'bad']);
+  if(b.stam === 'planerat') flags.push(['stambyte kvar', 'bad']);
+  if(b.akta === 'nej') flags.push(['oäkta förening', 'warn']);
+  return flags;
+}
+
+
+/* ---------- what only you two can know ----------
+   Everything above this line comes from Booli. Everything below comes from
+   reading an annual report, standing in a hallway, or agreeing on a number
+   over dinner — and it is the half that actually decides a purchase. Three
+   small forms, one storage mechanism, shared the moment either of you types.
+
+   Saving happens on blur, like the comment box, so there is no button to
+   forget. */
+const fNum = (l,k,ph) => ({k, l, t:'num', ph});
+const fSel = (l,k,opts) => ({k, l, t:'sel', opts});
+const fTxt = (l,k,ph) => ({k, l, t:'txt', ph});
+const JN = ['', 'ja', 'nej', 'vet ej'];
+
+const SPEC = {
+  brf: [
+    fNum('Skuld per m², kr', 'debt', 't.ex. 8500'),
+    fSel('Tomträtt', 'tomtratt', JN),
+    fSel('Avgiftshöjning aviserad', 'raise', JN),
+    fSel('Stambyte', 'stam', ['', 'gjort', 'planerat', 'vet ej']),
+    fNum('Stambyte år', 'stamyear', 'årtal'),
+    fNum('Fasad/fönster senast', 'fasad', 'årtal'),
+    fTxt('Föreningens lån omsätts', 'bindning', 't.ex. 2027'),
+    fSel('Äkta förening', 'akta', JN),
+    fTxt('Övrigt om föreningen', 'note', ''),
+  ],
+  show: [
+    fSel('Ljus', 'ljus', ['', 'mycket bra', 'bra', 'ok', 'dåligt']),
+    fTxt('Väderstreck', 'vader', 't.ex. syd/väst'),
+    fSel('Buller', 'buller', ['', 'tyst', 'ok', 'störande']),
+    fSel('Planlösning', 'plan', ['', 'mycket bra', 'bra', 'ok', 'dålig']),
+    fNum('Kök renoverat', 'kok', 'årtal'),
+    fNum('Badrum renoverat', 'bad', 'årtal'),
+    fNum('Renoveringsbehov, kr', 'renov', 't.ex. 250000'),
+    fSel('Förråd', 'forrad', JN),
+    fSel('Hiss', 'hiss', JN),
+    fSel('Helhetsbetyg', 'betyg', ['', '5 — vi vill ha den', '4', '3', '2', '1 — nej']),
+    fTxt('Intryck', 'note', ''),
+  ],
+  max: [
+    fNum('Vårt tak, Mkr', 'price', 't.ex. 9.4'),
+    fTxt('Varför just där', 'why', ''),
+  ],
+};
+
+function recForm(id, kind){
+  const rec = getRec(id, kind) || {};
+  const rows = SPEC[kind].map(f=>{
+    const v = rec[f.k] == null ? '' : String(rec[f.k]);
+    if(f.t === 'sel')
+      return `<label class="rf"><span>${f.l}</span><select data-f="${f.k}">${
+        f.opts.map(o=>`<option value="${esc(o)}"${o===v?' selected':''}>${
+          o === '' ? '—' : esc(o)}</option>`).join('')}</select></label>`;
+    return `<label class="rf"><span>${f.l}</span><input type="${f.t==='num'?'number':'text'}"
+      data-f="${f.k}" value="${esc(v)}" placeholder="${esc(f.ph||'')}"></label>`;
+  }).join('');
+  const by = rec._by ? `<p class="meta" style="margin:8px 0 0">Senast ifyllt av ${esc(rec._by)}</p>` : '';
+  return `<div class="recform" data-rid="${id}" data-kind="${kind}">${rows}${by}</div>`;
+}
+
+function wireForms(root){
+  root.querySelectorAll('.recform').forEach(box=>{
+    const id = box.dataset.rid, kind = box.dataset.kind;
+    box.querySelectorAll('[data-f]').forEach(inp=>{
+      inp.onclick = e => e.stopPropagation();
+      inp.onchange = () => {
+        const cur = getRec(id, kind) || {};
+        const next = {};
+        for(const [k,v] of Object.entries(cur)) if(!k.startsWith('_')) next[k] = v;
+        const val = inp.value.trim();
+        if(val === '') delete next[inp.dataset.f]; else next[inp.dataset.f] = val;
+        setRec(id, kind, next);
+        toast('Sparat');
+        render();
+      };
+    });
+  });
+}
+
+/* A tap on the shoulder when a number you agreed on is about to be passed. */
+function maxWarn(r){
+  const m = getRec(r.id, 'max');
+  if(!m || !m.price) return '';
+  const cap = parseFloat(String(m.price).replace(',','.')) * 1e6;
+  if(!isFinite(cap) || cap <= 0) return '';
+  const exp = r.expected_final || r.ask || 0;
+  if(exp <= cap) return `<span class="badge b-qual" title="Ert tak: ${msek(cap)}kr">tak ${msek(cap)}</span>`;
+  return `<span class="badge b-split" title="Förväntat slutpris ligger över taket ni satte">över ert tak (${msek(cap)})</span>`;
+}
+
+function brfBadge(r){
+  const flags = brfRisk(getRec(r.id, 'brf'));
+  if(!flags || !flags.length) return '';
+  const bad = flags.some(f=>f[1] === 'bad');
+  return `<span class="badge ${bad?'b-split':'b-qual'}" title="${
+    esc(flags.map(f=>f[0]).join(' · '))}">förening: ${esc(flags[0][0])}${
+    flags.length>1?' +'+(flags.length-1):''}</span>`;
+}
+
+function betygBadge(r){
+  const v = getRec(r.id, 'show');
+  if(!v || !v.betyg) return '';
+  const n = String(v.betyg)[0];
+  return `<span class="badge b-qual" title="Ert helhetsbetyg efter visning">visad · ${esc(n)}/5</span>`;
+}
 
 /* ---------- the way in ----------
    The sorting deck is the fastest way through a long list, but it was hidden
@@ -1553,9 +1814,12 @@ function swipeHero(){
   const withShowing = deck.filter(r => { const f = showFmt(r); return f && !f.past; }).length;
   document.getElementById('shtitle').textContent =
     deck.length === 1 ? '1 osorterat objekt' : `${deck.length} osorterade objekt`;
+  const confirmed = L.filter(r => collective(r.id) === 'confirmed').length;
   document.getElementById('shsub').textContent =
-    'Svep igenom med bilder'
-    + (withShowing ? ` · ${withShowing} har visning` : '');
+    confirmed
+      ? `Ni är redan överens om ${confirmed} ♥ · svep vidare`
+      : 'Ett av dem blir ert — svep igenom med bilder'
+        + (withShowing ? ` · ${withShowing} har visning` : '');
 }
 
 /* ---------- the bar at the top ---------- */
@@ -1563,7 +1827,7 @@ function statusbar(){
   const us = USERS();
   const counts = {};
   for(const k of Object.keys(VIEWS)) counts[k] = 0;
-  for(const r of L){
+  for(const r of baseFiltered()){
     const c = collective(r.id);
     for(const [k,f] of Object.entries(VIEWS)) if(f(c)) counts[k]++;
   }
@@ -1586,7 +1850,8 @@ function statusbar(){
         `<button class="chip" data-view="${k}" aria-pressed="${state.view===k}">${
           k[0].toUpperCase()+k.slice(1)} <span class="n">${counts[k]}</span></button>`).join('')}</span>
      <span class="grow"></span>
-     <button class="chip big" id="swopen">Sortera med bilder →</button>`;
+     <button class="chip big" id="swopen">Sortera med bilder →</button>
+     <span class="legend-note">Ett ♥ = kvalificerad · båda ♥ = bekräftad · ✕ döljer den för dig</span>`;
   el.querySelector('#mepick').onchange = e=>{ setMe(e.target.value); render(); };
   el.querySelectorAll('[data-link]').forEach(b=>{
     const u = b.dataset.link, label = b.textContent;
@@ -1598,8 +1863,12 @@ function statusbar(){
   el.querySelector('#swopen').onclick = ()=>swipeOpen();
 }
 
-function filtered(){
-  let out = L.filter(r =>
+/* Everything except the view chips. The chips need this so their counts say
+   how many objects each view holds *within the current filters* — showing
+   "Bekräftade 0" against all 205 while the list shows 190 was three different
+   totals on one screen. */
+function baseFiltered(){
+  return L.filter(r =>
     (!state.dist.size || state.dist.has(r.district_name)) &&
     (!state.rooms.size || state.rooms.has(band(r))) &&
     (!MAP.box || (r.lat!=null && r.lon!=null &&
@@ -1610,11 +1879,18 @@ function filtered(){
     (!state.q || (r.addr+' '+r.district_name).toLowerCase().includes(state.q)) &&
     (!state.aff || r.affordable) &&
     (!state.showing || !!r.show_date) &&
-    VIEWS[state.view](collective(r.id)));
+    (!state.week || (function(){ const f = showFmt(r); return f && !f.past && f.days <= 7; })()) &&
+    (state.maxPrice==null || ((r.ask||r.expected_final||0) <= state.maxPrice)));
+}
+
+function filtered(){
+  const out = baseFiltered().filter(r => VIEWS[state.view](collective(r.id)));
   const key = {
     score: r=>-r.score, cost: r=>r.f.total,
     price: r=>r.expected_final, sqm: r=>-r.sqm,
     new: r=>r.days, sqmprice: r=>r.ask_sqm, era: r=>r.era,
+    // no viewing set sorts last, not first
+    showing: r=>{ const f = showFmt(r); return (f && !f.past) ? f.days : 9999; },
   }[state.sort];
   return out.sort((a,b)=>key(a)-key(b));
 }
@@ -1940,7 +2216,11 @@ function verdict(r){
 }
 
 function detailRow(r){
-  return `<tr class="detail"><td colspan="99">${detailBody(r)}</td></tr>`;
+  // The table scrolls sideways when it is wider than the screen. A detail cell
+  // inherits that width, so on a phone the labels were visible and every
+  // number sat past the right edge. Pinning the cell and giving its contents
+  // the viewport's width instead keeps the whole panel on screen.
+  return `<tr class="detail"><td colspan="99"><div class="dwrap">${detailBody(r)}</div></td></tr>`;
 }
 
 function detailBody(r){
@@ -1975,6 +2255,21 @@ function detailBody(r){
       <div class="kv"><span>Budgivning</span><span>${r.bidding?'pågår':'inte igång'}</span></div>
       <div style="margin-top:12px">${notes}</div>
       <div style="margin-top:10px">${markBtns(r)}</div>
+
+      <details class="sub"><summary><span>Föreningen</span>
+        <span class="sumtag">${(()=>{ const b=getRec(r.id,'brf');
+          return b && b.debt ? kr(+b.debt)+' kr/m²' : 'inte ifyllt'; })()}</span></summary>
+        <div>${recForm(r.id, 'brf')}</div></details>
+
+      <details class="sub"><summary><span>Efter visningen</span>
+        <span class="sumtag">${(()=>{ const v=getRec(r.id,'show');
+          return v && v.betyg ? String(v.betyg)[0]+'/5' : 'inte ifyllt'; })()}</span></summary>
+        <div>${recForm(r.id, 'show')}</div></details>
+
+      <details class="sub"><summary><span>Vårt tak i budgivningen</span>
+        <span class="sumtag">${(()=>{ const m=getRec(r.id,'max');
+          return m && m.price ? m.price+' Mkr' : 'inte satt'; })()}</span></summary>
+        <div>${recForm(r.id, 'max')}</div></details>
     </div>
     <div>
       <h4>Vid förväntat slutpris ${msek(a.price)}kr</h4>
@@ -1992,6 +2287,12 @@ function detailBody(r){
       <div class="kv total"><span>Per månad ex. amortering</span><span>${kr(a.running)} kr</span></div>
       <div class="kv"><span>Amortering ${(a.amortPct*100)} %</span><span>${kr(a.amort)} kr</span></div>
       <div class="kv total"><span>Per månad inkl. amortering</span><span>${kr(a.total)} kr</span></div>
+      <div class="kv" style="margin-top:10px"><span>Vid stressränta ${
+        (a.stressRate*100).toFixed(1).replace('.',',')} %</span><span>${kr(a.stressTotal)} kr${
+        a.stressShare!=null ? ` · ${Math.round(a.stressShare*100)} % av nettot` : ''}</span></div>
+      <div class="kv"><span>Handpenning vid kontrakt</span><span>${kr(a.deposit)} kr</span></div>
+      ${a.overPromise ? `<div class="kv" style="color:var(--critical)"><span>Över lånelöftet</span><span>${
+        kr(a.promiseGap)} kr saknas</span></div>` : ''}
     </div>
     <div>
       <h4>Fördelning</h4>
@@ -2043,7 +2344,7 @@ function showSelected(r, rows){
      &nbsp; ${verdict(r)}${r.days<=1?' <span class="badge b-new">NY</span>':''}`;
   document.getElementById('selbody').innerHTML = detailBody(r);
   c.hidden = false;
-  wireMarks(c); wireComments(c);
+  wireMarks(c); wireComments(c); wireForms(c);
   // On a wide screen the panel sits beside the map and is already in view;
   // scrolling it into the middle just yanks the map out from under the cursor.
   if(!matchMedia('(min-width:1180px)').matches)
@@ -2068,14 +2369,17 @@ function table(rows){
     const a = r.f;
     const c = collective(r.id), cb = COLL[c];
     const main = `<tr class="row${selId===r.id?' sel':''}${c==='out'?' isout':''}" data-id="${r.id}">
-      <td class="c-th">${thumbTag(r, 160, 'thumb')}</td>
+      <td class="c-th">${thumbTag(r, 160, 'thumb')}${markBtns(r)}</td>
       <td class="l meta c-sm-hide">${r.rank}</td>
       <td class="l"><div class="addr"><a href="${r.url}" target="_blank" rel="noopener">${esc(r.addr)}</a></div>
-          <div class="meta">${cb[0]?`<span class="badge ${cb[1]}">${cb[0]}</span> `:''}${verdict(r)}</div>
+          <div class="meta">${cb[0]?`<span class="badge ${cb[1]}">${cb[0]}</span> `:''}${verdict(r)}${
+            a.overPromise ? ' <span class="badge b-split" title="Kräver mer lån än ert lånelöfte">över lånelöftet</span>' : ''}</div>
+          ${(()=>{const x=[brfBadge(r), betygBadge(r), maxWarn(r)].filter(Boolean);
+            return x.length ? `<div class="meta">${x.join(' ')}</div>` : '';})()}
           ${showLine(r)}
           ${otherNote(r)}
-          <div class="meta c-sm">${esc(r.district_name)} · ${esc(r.era_label)} · inkom ${esc(r.published.slice(5))}${
-            r.days<=1?' · NY':''}</div>
+          <div class="meta c-sm">${r.ask?msek(r.ask)+'kr · ':''}${esc(r.district_name)} · ${
+            esc(r.era_label)} · inkom ${esc(r.published.slice(5))}${r.days<=1?' · NY':''}</div>
           ${r.feeHigh?`<div class="meta" style="color:var(--warning)">hög avgift · ${pct(r.feeVsPeers,0)} mot liknande hus</div>`:''}</td>
       <td class="l meta c-md">${esc(r.district_name)}</td>
       <td>${String(r.sqm).replace('.',',')}</td>
@@ -2088,30 +2392,42 @@ function table(rows){
         ${msek(r.expected_final)}kr<div class="meta" style="font-variant-numeric:tabular-nums">${
         msek(r.expected_lo)}–${msek(r.expected_hi)}</div></td>
       <td style="font-weight:600">${kr(a.total)}</td>
-      <td class="c-lg meta">${kr(a.running)}</td>
+      <td class="c-xl meta">${kr(a.running)}</td>
       <td class="l meta c-xs" title="${r.days} dagar ute">${
         r.days<=1?'<span class="badge b-new">NY</span> ':''}${esc(r.published.slice(5))}</td>
-      <td class="l">${markBtns(r)}</td></tr>`;
+</tr>`;
     return main + (openId===r.id ? detailRow(r) : '');
   }).join('');
   wireMarks(tb);
   wireComments(tb);
+  wireForms(tb);
   tb.querySelectorAll('tr.row').forEach(tr=>tr.onclick=e=>{
     if(e.target.tagName==='A' || e.target.closest('.sbtns') || e.target.closest('.cmt')) return;
-    const r = rows.find(x=>x.id===tr.dataset.id);
-    // On a wide screen the detail panel is already on screen beside the map, so
-    // a row click fills it. On a narrow one there is no panel to fill and the
-    // row expands in place instead.
-    if(r && matchMedia('(min-width:1180px)').matches){
-      if(selId===r.id){ selId=null; document.getElementById('selcard').hidden=true; openId=null; table(rows); }
-      else { openId=null; showSelected(r, rows); }
-      return;
-    }
+    // Expand where the click happened. Filling the sticky panel instead looked
+    // clever but put the answer up to 1200px above the finger that asked for it.
     openId = openId===tr.dataset.id ? null : tr.dataset.id;
     if(selId && selId!==tr.dataset.id){ selId=null; document.getElementById('selcard').hidden=true; }
     table(rows);
   });
-  document.getElementById('empty').hidden = rows.length>0;
+  const emptyEl = document.getElementById('empty');
+  emptyEl.hidden = rows.length>0;
+  const clear = document.getElementById('fclear');
+  if(clear) clear.onclick = ()=>{
+    state.dist.clear(); state.rooms.clear(); state.eras.clear();
+    state.max = null; state.maxPrice = null; state.q = '';
+    state.showing = false; state.week = false; state.view = 'aktiva'; state.aff = true;
+    MAP.box = null;
+    // the chips keep their own pressed state in the DOM
+    ['fdist','frooms','feras'].forEach(id=>{
+      const g = document.getElementById(id);
+      if(g) g.querySelectorAll('[aria-pressed]').forEach(c=>c.setAttribute('aria-pressed','false'));
+    });
+    const mc = document.getElementById('mclear'); if(mc) mc.hidden = true;
+    ['fq','fmax','fprice'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    ['fshow','fweek'].forEach(id=>{ const el=document.getElementById(id); if(el) el.checked=false; });
+    const a=document.getElementById('faff'); if(a) a.checked=true;
+    render();
+  };
 }
 
 /* ---------- tiles ---------- */
@@ -2144,9 +2460,12 @@ function filterBrief(n){
   if(MAP.box) bits.push('valt område');
   if(!state.aff) bits.push('även över budget');
   if(state.showing) bits.push('visning inbokad');
+  if(state.week) bits.push('visning inom 7 dagar');
+  if(state.maxPrice) bits.push(`max ${msek(state.maxPrice)}kr`);
   if(state.view!=='aktiva') bits.push(state.view);
   document.getElementById('filtbrief').textContent =
-    (bits.length? bits.join(' · ') : 'inga filter') + ` — ${n} objekt`;
+    (bits.length ? bits.join(' · ') : (state.aff ? 'bara sådana ni har råd med' : 'inga filter'))
+    + ` — ${n} av ${L.length} objekt`;
 }
 
 function render(){
@@ -2234,7 +2553,7 @@ addEventListener('hashchange', ()=>{
 // stays testable and inspectable.
 window.__app = {get L(){return L;}, get M(){return M;}, get CFG(){return CFG;},
   MARKS, USERS, me, setMe, collective, VIEWS, swipeOpen, swipeMark, swipeClose, HOVERS,
-  fromSheet, linkFor, copyLink,
+  fromSheet, linkFor, copyLink, getRec, setRec, brfRisk, SPEC, recForm,
   setSync(u){ SYNC = u || null; MARKS.flush(); },
   needsIdentity, askIdentity,
   get SYNC(){ return SYNC; },
