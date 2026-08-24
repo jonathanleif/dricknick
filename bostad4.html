@@ -227,6 +227,38 @@ details.card>.body{padding:0 20px 18px}
 #who label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 4px}
 #who input{width:100%;background:var(--surface);color:var(--ink);border:1px solid var(--border);
   border-radius:8px;padding:9px 12px;font:inherit;font-size:15px;margin-bottom:12px}
+#swipehero{display:none;width:100%;text-align:left;align-items:center;gap:16px;
+  margin:0 0 18px;padding:14px 18px;border-radius:14px;cursor:pointer;font:inherit;
+  border:1px solid var(--s1);color:var(--ink);
+  background:linear-gradient(100deg,
+    color-mix(in srgb, var(--s1) 16%, var(--surface)),
+    color-mix(in srgb, var(--s1) 5%, var(--surface)));
+  box-shadow:var(--shadow);transition:transform .12s ease, box-shadow .12s ease}
+#swipehero:not([hidden]){display:flex}
+#swipehero:hover{transform:translateY(-1px)}
+#swipehero .fan{flex:0 0 auto;display:flex;align-items:center}
+#swipehero .fan img{width:46px;height:60px;object-fit:cover;border-radius:8px;
+  border:2px solid var(--surface);box-shadow:0 1px 4px rgba(0,0,0,.18);background:var(--grid)}
+#swipehero .fan img:nth-child(1){transform:rotate(-7deg)}
+#swipehero .fan img:nth-child(2){margin-left:-16px;z-index:1}
+#swipehero .fan img:nth-child(3){margin-left:-16px;transform:rotate(7deg)}
+#swipehero .txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+#swipehero .h{font-size:16px;font-weight:600;letter-spacing:-.01em}
+#swipehero .s{font-size:13px;color:var(--ink2);line-height:1.45}
+#swipehero .go{flex:0 0 auto;display:flex;gap:8px}
+#swipehero .ic{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:16px;background:var(--surface);border:1px solid var(--border)}
+#swipehero .ic.yes{color:var(--good);border-color:var(--good)}
+#swipehero .ic.no{color:var(--critical);border-color:var(--critical)}
+@media(max-width:620px){
+  #swipehero{gap:12px;padding:12px 14px}
+  #swipehero .fan img{width:38px;height:50px}
+  #swipehero .h{font-size:15px}
+  #swipehero .s{font-size:12.5px}
+  #swipehero .go .ic.no{display:none}
+  #swipehero .go .ic{width:34px;height:34px;font-size:15px}
+}
+
 #stale{margin:0 0 16px;padding:12px 16px;border-radius:12px;font-size:13.5px;line-height:1.5;
   border:1px solid var(--warning);background:color-mix(in srgb, var(--warning) 12%, transparent);
   color:var(--ink)}
@@ -327,6 +359,19 @@ td.c-th,th.c-th{width:66px;padding-right:6px}
   <button class="ghost" id="theme">Växla mörkt/ljust</button>
 </div>
 
+<div id="stale" hidden></div>
+
+<button id="swipehero" hidden>
+  <span class="fan" id="shfan" aria-hidden="true"></span>
+  <span class="txt">
+    <span class="h" id="shtitle"></span>
+    <span class="s" id="shsub"></span>
+  </span>
+  <span class="go" aria-hidden="true">
+    <span class="ic no">✕</span><span class="ic yes">♥</span>
+  </span>
+</button>
+
 <details class="card" id="hh" style="margin-bottom:18px">
   <summary><span><span class="st">Köpare och ekonomi</span>
     <span class="sd" id="hhbrief"></span></span>
@@ -420,8 +465,6 @@ td.c-th,th.c-th{width:66px;padding-right:6px}
     <p class="foot" id="whofoot"></p>
   </div>
 </div>
-
-<div id="stale" hidden></div>
 
 <div class="statusbar" id="statusbar"></div>
 
@@ -1021,6 +1064,7 @@ document.getElementById('fmax').oninput = e => {
   state.max = e.target.value ? +e.target.value : null; render(); };
 document.getElementById('faff').onchange = e => { state.aff = e.target.checked; render(); };
 document.getElementById('fshow').onchange = e => { state.showing = e.target.checked; render(); };
+document.getElementById('swipehero').onclick = () => swipeOpen();
 document.getElementById('swclose').onclick = swipeClose;
 document.getElementById('swyes').onclick  = () => swipeMark('yes');
 document.getElementById('swno').onclick   = () => swipeMark('no');
@@ -1483,6 +1527,35 @@ function askIdentity(done){
   names.querySelectorAll('input').forEach(inp => inp.onkeydown = e => {
     if(e.key === 'Enter'){ e.preventDefault(); go(); }
   });
+}
+
+
+/* ---------- the way in ----------
+   The sorting deck is the fastest way through a long list, but it was hidden
+   behind a small button in a row of chips, which is a good way to build
+   something nobody opens. This puts it at the top with three actual photos
+   from the objects waiting — the pull is the flats themselves, not the label.
+   It disappears when there is nothing left to sort, so it never nags. */
+function swipeHero(){
+  const el = document.getElementById('swipehero');
+  const keep = state.view;
+  state.view = 'osorterade';
+  const deck = filtered();
+  state.view = keep;
+
+  if(!deck.length){ el.hidden = true; return; }
+  el.hidden = false;
+
+  const shots = deck.slice(0, 3).map(r => (r.img||[])[0]).filter(Boolean);
+  document.getElementById('shfan').innerHTML =
+    shots.map(id => `<img src="${imgUrl(id, 160)}" loading="lazy" decoding="async" alt="">`).join('');
+
+  const withShowing = deck.filter(r => { const f = showFmt(r); return f && !f.past; }).length;
+  document.getElementById('shtitle').textContent =
+    deck.length === 1 ? '1 osorterat objekt' : `${deck.length} osorterade objekt`;
+  document.getElementById('shsub').textContent =
+    'Svep igenom med bilder'
+    + (withShowing ? ` · ${withShowing} har visning` : '');
 }
 
 /* ---------- the bar at the top ---------- */
@@ -2079,6 +2152,7 @@ function filterBrief(n){
 function render(){
   assumptionsHtml();
   statusbar();
+  swipeHero();
   const rows = filtered();
   filterBrief(rows.length);
   if(selId && !rows.some(r=>r.id===selId)){
