@@ -256,7 +256,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
         <button type="button" role="tab" id="tab-an" aria-selected="false" aria-controls="pane-an">Analys</button>
       </div>
     </div>
-    <div class="hdr-right"><label class="who">Jag är <select id="who"><option value="">välj</option><option>Jonathan</option><option>Elsa</option></select></label><div class="stamp" id="stamp">Hämtar data …</div></div>
+    <div class="hdr-right"><label class="who" title="Används bara för markeringar (favorit/kanske/nej och anteckningar), så att ni ser vem som markerat vad">Jag är <select id="who"><option value="">välj</option><option>Jonathan</option><option>Elsa</option></select></label><div class="stamp" id="stamp">Hämtar data …</div></div>
   </header>
 
   <section class="tiles" id="tiles" aria-label="Nyckeltal"></section>
@@ -1054,10 +1054,17 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   try { const w = localStorage.getItem('bj2:who'); if (w) $('who').value = w; } catch {}
   $('who').addEventListener('change', () => { try { localStorage.setItem('bj2:who', who()); } catch {} });
 
-  async function getJSON(what) {
-    const r = await fetch(`${BACKEND}?what=${what}&t=${Date.now()}`);
-    if (!r.ok) throw new Error(String(r.status));
-    return r.json();
+  async function getJSON(what, tries = 4) {
+    for (let i = 0; ; i++) {
+      try {
+        const r = await fetch(`${BACKEND}?what=${what}&t=${Date.now()}`);
+        if (!r.ok) throw new Error(String(r.status));
+        return await r.json();
+      } catch (err) {
+        if (i >= tries - 1) throw err;
+        await new Promise((res) => setTimeout(res, 1500 * (i + 1)));
+      }
+    }
   }
   const writing = {};
   async function setMark(id, patch, quiet) {
@@ -1093,7 +1100,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
       $('foot').innerHTML = '<span>Källor: Hemnet och Booli. Sökning: Stockholm inom tullarna (Booli: innerstaden) · bostadsrätt · minst 2 rum · minst 60 m² · högst 12 Mkr · ej nyproduktion</span><span>Visningar som passerat sparas från och med första hämtningen. Objekt som redan låg ute då bedöms därför som troliga.</span><span>Karta © OpenStreetMap-bidragsgivare.</span>';
       renderAreas(); renderAll();
     } catch (err) {
-      $('stamp').textContent = 'Kunde inte hämta data. Ladda om sidan om en stund.';
+      console.error('bostadsjakt: laddning misslyckades', err); $('stamp').innerHTML = 'Kunde inte hämta data. <a href="#" id="retry">Försök igen</a>'; const rt = $('retry'); if (rt) rt.onclick = (e) => { e.preventDefault(); $('stamp').textContent = 'Hämtar data …'; loadAll(); };
     }
   }
   async function refreshMarks() {
