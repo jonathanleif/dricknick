@@ -1,0 +1,1116 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Bostadsjakt Innerstan</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+html, body { margin: 0; }
+[hidden] { display: none !important; }
+/* Layout: rubrik med flikar (Lista / Analys), nyckeltalsrad, gemensamma filter,
+   därunder antingen den täta objektlistan eller analysens tre sektioner.
+   Medvetet ett ljust tema i alla lägen. */
+:root {
+  color-scheme: light;
+  --bg: #f3f4f1;
+  --surface: #ffffff;
+  --sunken: #ebede9;
+  --fg: #1a201f;
+  --muted: #5c6764;
+  --faint: #8b9592;
+  --line: #dde1dc;
+  --grid: #eceeea;
+  --accent: #1d5c57;
+  --accent-soft: #dcebe8;
+  --accent-fg: #ffffff;
+  --c-neg: #00897b;           /* serie: visad, inga bud */
+  --c-bid: #c47f17;           /* serie: budgivning */
+  --c-rest: #b8c0bd;          /* övriga, nedtonat */
+  --good: #2f6b2f;   --good-soft: #dfecd9;
+  --warn: #8a5a00;   --warn-soft: #f7e8c6;
+  --bad: #9b2f2a;    --bad-soft: #f6dddb;
+  --info: #3b4f7a;   --info-soft: #e1e6f2;
+  --font-ui: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --r: 6px;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 14px; line-height: 1.45; }
+.wrap { max-width: 1480px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 48px; display: grid; gap: 16px; }
+a { color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- rubrik och flikar ---------- */
+header.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; }
+.brand { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
+.brand h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.brand h1 span { color: var(--muted); font-weight: 500; }
+.tabs { display: inline-flex; background: var(--sunken); border-radius: 8px; padding: 3px; gap: 2px; }
+.tabs button { border: 0; background: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; color: var(--muted); }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(20,30,28,.12); }
+.stamp { color: var(--muted); font-size: 13px; }
+.hdr-right { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; }
+.who { font-size: 13px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
+.who select { border: 1px solid var(--line); border-radius: 4px; padding: 3px 6px; background: var(--surface); }
+#lmap { height: max(460px, calc(100vh - 300px)); border: 1px solid var(--line); border-radius: var(--r); }
+.minimapL { height: 220px; border: 1px solid var(--line); border-radius: 6px; margin-top: 10px; }
+.leaflet-popup-content { font-family: var(--font-ui); font-size: 13px; margin: 10px 12px; }
+.leaflet-popup-content h3 { margin: 0 0 4px; font-size: 14px; }
+.leaflet-popup-content .row2 { color: var(--muted); font-family: var(--font-num); font-size: 12px; margin: 3px 0 6px; }
+.leaflet-popup-content .acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.maplegend2 { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); margin-bottom: 8px; align-items: center; }
+.maplegend2 i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.2); }
+.stamp b { color: var(--fg); font-weight: 600; }
+
+/* ---------- nyckeltal ---------- */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.tile { background: var(--surface); padding: 12px 14px 13px; display: grid; gap: 2px; align-content: start; }
+.tile .lab { font-size: 12px; color: var(--muted); }
+.tile .val { font-size: 24px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.15; }
+.tile .val small { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 3px; }
+.tile .tnote { font-size: 12px; color: var(--faint); }
+.tile.hl .val { color: var(--accent); }
+
+/* ---------- filter ---------- */
+details.fbox { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+details.fbox > summary { cursor: pointer; font-weight: 600; padding: 10px 14px; list-style: none; display: flex; gap: 8px; align-items: center; }
+details.fbox > summary::-webkit-details-marker { display: none; }
+details.fbox > summary::before { content: "▸"; color: var(--muted); }
+details.fbox[open] > summary::before { content: "▾"; }
+details.fbox > summary .sub { font-weight: 400; }
+.filters { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; padding: 0 14px 14px; }
+.f { display: grid; gap: 3px; min-width: 0; }
+.f label, .f .lab { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+.f input { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 5px 8px; min-width: 0; }
+.f input[type="number"] { width: 92px; font-family: var(--font-num); font-size: 13px; }
+.f input[type="search"] { width: 190px; }
+.range { display: flex; gap: 4px; align-items: center; color: var(--faint); }
+.areas { display: flex; flex-wrap: wrap; gap: 4px; }
+.areas button { border: 1px solid var(--line); background: var(--bg); border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 13px; }
+.areas button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.chk { display: flex; align-items: center; gap: 6px; font-size: 13px; padding-bottom: 6px; }
+.f-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--bg); border-radius: 4px; padding: 5px 10px; cursor: pointer; }
+.btn:hover { border-color: var(--muted); }
+.colmenu { position: relative; }
+.colmenu .panel[hidden] { display: none; }
+.colmenu .panel { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; display: grid; gap: 4px; min-width: 200px; box-shadow: 0 8px 24px rgba(20,30,28,.12); }
+
+/* ---------- vyer ---------- */
+.views { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.view { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; cursor: pointer; font-weight: 500; display: inline-flex; gap: 6px; align-items: center; }
+.view .n { font-family: var(--font-num); font-size: 12px; color: var(--muted); }
+.view[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.view[aria-pressed="true"] .n { color: inherit; opacity: .8; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; color: var(--muted); font-size: 12px; align-items: center; }
+
+/* ---------- tabell ---------- */
+.tablebox { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow-x: auto; }
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 13px; }
+thead th { position: sticky; top: 0; z-index: 2; background: var(--sunken); text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; cursor: pointer; user-select: none; }
+thead th.num { text-align: right; }
+thead th[aria-sort] { color: var(--fg); }
+thead th[aria-sort="ascending"]::after { content: " ↑"; }
+thead th[aria-sort="descending"]::after { content: " ↓"; }
+tbody td { padding: 7px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; vertical-align: middle; }
+tbody tr.row { cursor: pointer; }
+tbody tr.row:hover td { background: #f6f8f5; }
+tbody tr.row.open td { background: var(--accent-soft); }
+tbody tr.ended td { color: var(--faint); }
+td.num { text-align: right; font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 12.5px; }
+td.addr { font-weight: 600; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+td.addr a { text-decoration: none; }
+td.addr a:hover { text-decoration: underline; }
+td.addr small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
+th.stick, td.stick { position: sticky; left: 0; z-index: 1; }
+td.stick { background: var(--surface); }
+thead th.stick { z-index: 3; }
+.mk { width: 34px; text-align: center; padding-inline: 4px; }
+.mkb { border: 0; background: none; cursor: pointer; font-size: 15px; line-height: 1; color: var(--faint); padding: 2px 4px; border-radius: 4px; }
+.mkb[data-s="fav"] { color: var(--warn); }
+.mkb[data-s="maybe"] { color: var(--info); }
+.mkb[data-s="no"] { color: var(--bad); }
+.sub { color: var(--muted); font-size: 11.5px; }
+.up { color: var(--bad); } .down { color: var(--good); }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.p-neg { background: var(--accent-soft); color: var(--accent); }
+.p-neg.weak { background: transparent; box-shadow: inset 0 0 0 1px var(--accent); }
+.p-bid { background: var(--warn-soft); color: var(--warn); }
+.p-show { background: var(--info-soft); color: var(--info); }
+.p-new { background: var(--good-soft); color: var(--good); }
+.p-none { background: var(--sunken); color: var(--muted); }
+.p-end { background: var(--bad-soft); color: var(--bad); }
+.p-soon { background: var(--info-soft); color: var(--info); box-shadow: inset 0 0 0 1px var(--info); }
+.src { display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: .03em; padding: 0 5px; border-radius: 3px; background: var(--sunken); color: var(--muted); margin-left: 6px; vertical-align: 1px; }
+.f select, .f input[type="date"] { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 5px 8px; min-width: 0; }
+.showchips { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.showchips button { border: 1px solid var(--line); background: var(--bg); border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 13px; }
+.showchips button[aria-pressed="true"] { background: var(--info-soft); border-color: var(--info); }
+.showchips .custom { display: inline-flex; gap: 4px; align-items: center; color: var(--faint); }
+.showchips .custom[hidden] { display: none; }
+
+tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px; }
+.dgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px 28px; max-width: 1200px; }
+.dgrid h4 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 13px; margin: 0; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; font-family: var(--font-num); font-size: 12.5px; }
+.shows { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; font-family: var(--font-num); font-size: 12.5px; }
+.shows .past { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--faint); }
+.note { width: 100%; min-height: 64px; resize: vertical; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; }
+.marks { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+.marks button { border: 1px solid var(--line); background: var(--surface); border-radius: 4px; padding: 4px 10px; cursor: pointer; }
+.marks button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.spark { display: block; width: 100%; max-width: 260px; height: 46px; }
+.links { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 13px; }
+.empty { padding: 48px 16px; text-align: center; color: var(--muted); }
+.empty b { display: block; color: var(--fg); font-size: 15px; margin-bottom: 4px; }
+
+/* ---------- karta ---------- */
+:root { --map-bg: #eef0ec; --map-water: #c8dbe3; --map-green: #dde8d6; --map-road: #ffffff; --map-major: #f1e6c8; --map-casing: #d3d6cf; --map-label: #59615e; }
+.mapwrap { position: relative; height: max(440px, calc(100vh - 300px)); background: var(--map-bg); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; touch-action: none; }
+.mapwrap canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+.mapwrap canvas.drag { cursor: grabbing; }
+.mapctl { position: absolute; right: 10px; top: 10px; display: grid; gap: 4px; }
+.mapctl button { width: 34px; height: 34px; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; font-size: 18px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(20,30,28,.12); }
+.maplegend { position: absolute; left: 10px; top: 10px; background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px; max-width: calc(100% - 70px); }
+.maplegend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.15); }
+.attr { position: absolute; right: 6px; bottom: 4px; font-size: 10.5px; color: var(--muted); background: color-mix(in srgb, var(--surface) 80%, transparent); padding: 1px 5px; border-radius: 3px; }
+.mapcard { position: absolute; left: 10px; bottom: 10px; width: min(340px, calc(100% - 20px)); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; box-shadow: 0 8px 24px rgba(20,30,28,.16); display: grid; gap: 6px; font-size: 13px; }
+.mapcard[hidden] { display: none; }
+.mapcard h3 { margin: 0; font-size: 15px; }
+.mapcard .row2 { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--muted); font-family: var(--font-num); font-size: 12px; }
+.mapcard .acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.mapcard .x { position: absolute; right: 6px; top: 4px; border: 0; background: none; font-size: 18px; cursor: pointer; color: var(--muted); }
+.mapcount { position: absolute; left: 50%; transform: translateX(-50%); bottom: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; font-size: 12px; color: var(--muted); }
+.minimap { position: relative; height: 220px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--map-bg); cursor: pointer; }
+.minimap canvas { display: block; width: 100%; height: 100%; }
+.minimap .attr { font-size: 9.5px; }
+.btn-cal { border: 1px solid var(--line); background: var(--surface); border-radius: 4px; padding: 1px 7px; margin-left: 8px; font-size: 11.5px; cursor: pointer; font-family: var(--font-ui); }
+.btn-cal:hover { border-color: var(--accent); }
+.btn-cal.done { border-color: transparent; background: var(--good-soft); color: var(--good); cursor: default; }
+.calconfirm { margin: 6px 0 4px; padding: 8px 10px; background: var(--info-soft); border-radius: 6px; font-family: var(--font-ui); font-size: 12.5px; display: grid; gap: 6px; }
+.calconfirm .acts { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.calconfirm select { border: 1px solid var(--line); border-radius: 4px; padding: 2px 4px; background: var(--surface); }
+.btn-primary { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-fg); border-radius: 4px; padding: 4px 10px; cursor: pointer; font-weight: 600; }
+.calmsg { font-size: 12px; }
+.calmsg.err { color: var(--bad); }
+
+/* ---------- analys ---------- */
+.an { display: grid; gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px 18px; min-width: 0; }
+.card h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.card .lede { margin: 2px 0 12px; color: var(--muted); font-size: 13px; max-width: 70ch; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { font-family: var(--font-ui); fill: var(--muted); font-size: 11px; }
+.chart text.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.chart text.lbl { fill: var(--fg); font-weight: 600; }
+.chart .hit { fill: transparent; cursor: default; }
+.tip { position: absolute; pointer-events: none; z-index: 5; background: var(--fg); color: #fff; font-size: 12px; line-height: 1.35; padding: 7px 9px; border-radius: 5px; max-width: 240px; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.tip b { font-weight: 600; }
+.tip .t2 { color: #c9d1ce; }
+.ckey { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.ckey i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.ckey i.sq { border-radius: 2px; }
+.areatbl td, .areatbl th { padding: 7px 10px; }
+.areatbl th { cursor: default; }
+.ib { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+.ib span.bar { display: inline-block; height: 8px; border-radius: 0 4px 4px 0; background: var(--c-neg); min-width: 2px; }
+.ib span.bar.bid { background: var(--c-bid); }
+.ib span.bar.n { background: var(--accent); }
+.ib .v { min-width: 58px; text-align: right; }
+.areatbl tr.tot td { font-weight: 600; background: var(--sunken); }
+.foot { color: var(--faint); font-size: 12px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+
+@media (max-width: 640px) {
+  .f input[type="search"] { width: 100%; }
+  .f-actions { margin-left: 0; }
+  .brand h1 { font-size: 19px; }
+  .tile .val { font-size: 20px; }
+  .tiles { grid-template-columns: 1fr 1fr; }
+  .tile:last-child:nth-child(odd) { grid-column: span 2; }
+  .card { padding: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Bostadsjakt <span>Innerstan</span></h1>
+      <div class="tabs" role="tablist" aria-label="Vy">
+        <button type="button" role="tab" id="tab-list" aria-selected="true" aria-controls="pane-list">Lista</button>
+        <button type="button" role="tab" id="tab-map" aria-selected="false" aria-controls="pane-map">Karta</button>
+        <button type="button" role="tab" id="tab-an" aria-selected="false" aria-controls="pane-an">Analys</button>
+      </div>
+    </div>
+    <div class="hdr-right"><label class="who">Jag är <select id="who"><option value="">välj</option><option>Jonathan</option><option>Elsa</option></select></label><div class="stamp" id="stamp">Hämtar data …</div></div>
+  </header>
+
+  <section class="tiles" id="tiles" aria-label="Nyckeltal"></section>
+
+  <details class="fbox" id="fbox"><summary>Filter <span class="sub" id="fsum"></span></summary>
+  <section class="filters" aria-label="Filter">
+    <div class="f"><label for="q">Sök</label><input id="q" type="search" placeholder="Adress, brf, mäklare"></div>
+    <div class="f"><span class="lab">Pris, Mkr</span><div class="range"><input id="pmin" type="number" step="0.25" min="0" placeholder="från" aria-label="Pris från"> – <input id="pmax" type="number" step="0.25" min="0" placeholder="till" aria-label="Pris till"></div></div>
+    <div class="f"><span class="lab">Boarea, m²</span><div class="range"><input id="smin" type="number" min="0" placeholder="från" aria-label="Boarea från"> – <input id="smax" type="number" min="0" placeholder="till" aria-label="Boarea till"></div></div>
+    <div class="f"><label for="rmin">Rum minst</label><input id="rmin" type="number" min="1" step="0.5" placeholder="2"></div>
+    <div class="f"><label for="fmax">Avgift max</label><input id="fmax" type="number" min="0" step="250" placeholder="kr/mån"></div>
+    <div class="f"><label for="dmin">Dagar ute minst</label><input id="dmin" type="number" min="0" placeholder="0"></div>
+    <div class="f"><span class="lab">Område</span><div class="areas" id="areas"></div></div>
+    <div class="f" style="flex-basis:100%"><span class="lab">Visning</span><div class="showchips" id="showchips"></div></div>
+    <label class="chk"><input id="balc" type="checkbox"> Balkong</label>
+    <label class="chk"><input id="elev" type="checkbox"> Hiss</label>
+    <label class="chk"><input id="hideNo" type="checkbox" checked> Dölj nej-markerade</label>
+    <div class="f-actions">
+      <button class="btn" id="reset" type="button">Rensa filter</button>
+      <div class="colmenu" id="colwrap">
+        <button class="btn" id="colbtn" type="button" aria-expanded="false">Kolumner</button>
+        <div class="panel" id="colpanel" hidden></div>
+      </div>
+    </div>
+  </section>
+  </details>
+
+  <nav class="views" id="views" aria-label="Snabbvyer"></nav>
+
+  <div id="pane-map" role="tabpanel" aria-labelledby="tab-map" hidden>
+    <div class="maplegend2"><span><i style="background:#00897b"></i>Visad, inga bud</span><span><i style="background:#c47f17"></i>Budgivning</span><span><i style="background:#3b4f7a"></i>Snart till salu</span><span><i style="background:#8f9a97"></i>Övriga</span><span><i style="background:#fff;box-shadow:0 0 0 2px #1a201f"></i>Markerad</span><span id="mapcount"></span></div>
+    <div id="lmap" aria-label="Karta över objekten i urvalet"></div>
+  </div>
+
+  <div id="pane-list" role="tabpanel" aria-labelledby="tab-list" style="display:grid;gap:14px">
+    <div class="legend">
+      <span class="pill p-neg">Visad, inga bud</span><span>visningen har passerat och ingen budgivning har startat</span>
+      <span class="pill p-neg weak">Trolig</span><span>inga kommande visningar och minst 10 dagar ute</span>
+      <span><b>Mot område</b>: kr/m² jämfört med medianen för aktiva objekt i samma område</span>
+    </div>
+    <div class="tablebox">
+      <table id="tbl">
+        <thead><tr id="thead"></tr></thead>
+        <tbody id="tbody"><tr><td class="empty" colspan="20"><b>Objekten laddas</b>Listan fylls från senaste Hemnet-hämtningen.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="pane-an" role="tabpanel" aria-labelledby="tab-an" class="an" hidden>
+    <section class="card">
+      <h2>Marknadsläge per område</h2>
+      <p class="lede">Aktiva objekt i ditt urval. Andelarna visar hur stor del av områdets utbud som redan är i budgivning, och hur stor del som har visats utan att få bud. Utrop mot Booli-värdering är medianen för områdets objekt; negativt betyder att utropspriset ligger under Boolis värdering. Slutpris mot utrop är medianen för sålda objekt där slutpriset är publicerat.</p>
+      <div class="tablebox" style="border:0"><table class="areatbl" id="areatbl"></table></div>
+    </section>
+
+    <section class="card">
+      <h2>Var finns förhandlingsläget?</h2>
+      <p class="lede">Varje punkt är ett aktivt objekt. Långt till höger och högt upp betyder att objektet legat länge och är dyrt per kvadratmeter: där är säljaren oftast mest benägen att diskutera pris.</p>
+      <div class="ckey"><span><i style="background:var(--c-neg)"></i>Visad, inga bud</span><span><i style="background:var(--c-bid)"></i>Budgivning</span><span><i style="background:var(--c-rest)"></i>Övriga</span><span><i style="background:none;box-shadow:inset 0 0 0 2px var(--fg)"></i>Markerad av er</span></div>
+      <div class="chart" id="ch-scatter"></div>
+    </section>
+
+    <div class="grid2">
+      <section class="card">
+        <h2>Nya objekt per vecka</h2>
+        <p class="lede">Efter publiceringsdatum på Hemnet, för alla objekt i urvalet som setts, även de som sålts.</p>
+        <div class="chart" id="ch-weekly"></div>
+      </section>
+      <section class="card">
+        <h2>Utbud vid varje hämtning</h2>
+        <p class="lede">Antal objekt som matchar sökningen. Kurvan växer för varje daglig körning.</p>
+        <div class="chart" id="ch-supply"></div>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Fördelningar</h2>
+      <p class="lede">Aktiva objekt i urvalet. Strecken under axeln är objekt ni markerat som intressanta eller kanske.</p>
+      <div class="grid3">
+        <div><h3 class="sub" style="margin:0 0 6px;font-size:12px;font-weight:600;color:var(--fg)">Kronor per kvadratmeter</h3><div class="chart" id="ch-h-sqm"></div></div>
+        <div><h3 class="sub" style="margin:0 0 6px;font-size:12px;font-weight:600;color:var(--fg)">Dagar ute</h3><div class="chart" id="ch-h-days"></div></div>
+        <div><h3 class="sub" style="margin:0 0 6px;font-size:12px;font-weight:600;color:var(--fg)">Boarea, m²</h3><div class="chart" id="ch-h-size"></div></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(() => {
+  // ---------- format ----------
+  const TZ = 'Europe/Stockholm';
+  const nf0 = new Intl.NumberFormat('sv-SE', { maximumFractionDigits: 0 });
+  const fmtDate = new Intl.DateTimeFormat('sv-SE', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short' });
+  const fmtDay = new Intl.DateTimeFormat('sv-SE', { timeZone: TZ, day: 'numeric', month: 'short' });
+  const fmtTime = new Intl.DateTimeFormat('sv-SE', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  const dt = (s) => { if (!s) return '–'; const t = fmtTime.format(new Date(s * 1000)); return t === '00:00' ? fmtDate.format(new Date(s * 1000)) : `${fmtDate.format(new Date(s * 1000))} ${t}`; };
+  const d0 = (s) => s ? fmtDate.format(new Date(s * 1000)) : '–';
+  const mkr = (v) => v == null ? '–' : (v / 1e6).toLocaleString('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const kr = (v) => v == null || !isFinite(v) ? '–' : nf0.format(v);
+  const pct = (v, d = 0) => v == null || !isFinite(v) ? '–' : `${(v * 100).toFixed(d).replace('.', ',')} %`;
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const now = () => Date.now() / 1000;
+  const DAY = 86400;
+  const median = (a) => { const s = a.filter((x) => x != null && isFinite(x)).sort((x, y) => x - y); if (!s.length) return null; const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+
+  // ---------- område ----------
+  const AREAS = [
+    ['Vasastan', /vasastan|sibirien|birkastan|odenplan|hagastaden|s:t eriksplan|sankt eriksplan|röda bergen|torsplan|rörstrand/],
+    ['Södermalm', /södermalm|sofo|katarina|sofia|högalid|hornstull|zinken|tanto|\bmaria|reimersholme|södra station|långholmen/],
+    ['Kungsholmen', /kungsholmen|kungholmen|kristineberg|thorildsplan|fridhemsplan|hornsberg|stadshagen|marieberg/],
+    ['Essingeöarna', /essingen/],
+    ['Östermalm', /östermalm|djurgård|ekhagen|lärkstaden|fältöversten/],
+    ['Gärdet', /gärdet/],
+    ['Norrmalm', /norrmalm|city|klara/],
+    ['Gamla stan', /gamla stan|riddarholmen|skeppsholmen/],
+  ];
+  const areaOf = (s) => {
+    const t = (s || '').toLowerCase();
+    let best = null, at = 1e9;
+    for (const [name, re] of AREAS) { const m = t.search(re); if (m >= 0 && m < at) { at = m; best = name; } }
+    return best || 'Övrigt';
+  };
+
+  // ---------- härledda fält ----------
+  function derive(r) {
+    const t = now();
+    const seen = r.ohSeen || [];
+    const past = seen.filter((s) => s < t - 3600);
+    const upcoming = [...new Set([...(r.oh || []), ...seen])].filter((s) => s >= t - 3600).sort((a, b) => a - b);
+    const active = r.status === 'Active';
+    const soon = r.status === 'Upcoming';
+    const lastShow = past.length ? Math.max(...past) : null;
+    let sig, sigKey, sigRank;
+    if (soon) {
+      sig = `<span class="pill p-soon">Snart till salu</span>`; sigKey = 'soon'; sigRank = 6;
+    } else if (!active) {
+      const lbl = { Sold: 'Såld', DeactivatedBeforeOpenHouse: 'Såld före visning', Gone: 'Borttagen' }[r.status] || r.status;
+      sig = `<span class="pill p-end">${esc(lbl)}</span>`; sigKey = 'ended'; sigRank = 9;
+    } else if (r.bid || r.bidOn) {
+      sig = '<span class="pill p-bid">Budgivning</span>'; sigKey = 'bid'; sigRank = 5;
+    } else if (past.length) {
+      sig = '<span class="pill p-neg">Visad, inga bud</span>'; sigKey = 'neg'; sigRank = 0;
+    } else if (!upcoming.length && (r.days ?? 0) >= 10) {
+      sig = '<span class="pill p-neg weak">Trolig: visad, inga bud</span>'; sigKey = 'neg?'; sigRank = 1;
+    } else if (upcoming.length) {
+      sig = `<span class="pill p-show">Visning ${esc(dt(upcoming[0]).replace('.', ''))}</span>`; sigKey = 'show'; sigRank = 3;
+    } else if (r.upc) {
+      sig = '<span class="pill p-new">Kommande</span>'; sigKey = 'upc'; sigRank = 4;
+    } else {
+      sig = '<span class="pill p-none">Ingen visning bokad</span>'; sigKey = 'none'; sigRank = 2;
+    }
+    const vh = r.vh || [];
+    let vpd = null;
+    if (vh.length >= 2) {
+      const a = vh[vh.length - 2], b = vh[vh.length - 1];
+      const dd = (Date.parse(b[0]) - Date.parse(a[0])) / 864e5;
+      if (dd > 0) vpd = (b[1] - a[1]) / dd;
+    } else if (r.views != null && r.days) vpd = r.views / Math.max(1, r.days);
+    const pdiff = r.price0 && r.price && r.price0 !== r.price ? (r.price - r.price0) / r.price0 : null;
+    const pchgPct = r.pchg && r.pchg.pct ? parseFloat(String(r.pchg.pct).replace(',', '.').replace(/[^\d.+-]/g, '')) / 100 : null;
+    return {
+      ...r,
+      areaN: areaOf(r.area || (r.slug || '').replace(/-/g, ' ')),
+      sqmPrice: r.price && r.sqm ? r.price / r.sqm : null,
+      feeSqm: r.fee && r.sqm ? r.fee / r.sqm : null,
+      pastN: past.length, upN: upcoming.length, nextShow: upcoming[0] || null, lastShow,
+      sinceShow: lastShow ? (t - lastShow) / DAY : null,
+      daysOut: r.pub ? Math.floor((((active || soon) ? t : (r.soldAt || r.endedAt || r.goneAt || t)) - r.pub) / DAY) : r.days,
+      soldVs: r.soldPrice && r.price ? r.soldPrice / r.price - 1 : null,
+      sig, sigKey, sigRank, vpd,
+      pmove: pdiff ?? pchgPct,
+      ended: !active && !soon,
+      soon,
+      onlyB: r.src === 'booli',
+      est: r.b?.est ?? null,
+      vsEst: r.b?.est && r.price ? r.price / r.b.est - 1 : null,
+      bUrl: r.b?.url ? 'https://www.booli.se' + r.b.url : null,
+      hUrl: r.slug ? 'https://www.hemnet.se/bostad/' + r.slug : null,
+      isNeg: sigKey === 'neg' || sigKey === 'neg?',
+    };
+  }
+  // kr/m² mot områdets median (aktiva objekt, hela datamängden)
+  function addAreaRel(list) {
+    const by = {};
+    list.filter((r) => !r.ended && !r.soon).forEach((r) => (by[r.areaN] ||= []).push(r.sqmPrice));
+    const med = Object.fromEntries(Object.entries(by).map(([a, v]) => [a, median(v)]));
+    list.forEach((r) => { const m = med[r.areaN]; r.vsArea = m && r.sqmPrice ? r.sqmPrice / m - 1 : null; });
+  }
+
+  // ---------- kolumner ----------
+  const COLS = [
+    { k: 'mark', h: '', cls: 'mk stick', sort: (r) => ({ fav: 0, maybe: 1, undefined: 2, no: 3 })[marks[r.id]?.s], fixed: true },
+    { k: 'addr', h: 'Adress', cls: 'addr', sort: (r) => r.addr || '', fixed: true },
+    { k: 'sig', h: 'Läge', sort: (r) => r.sigRank * 1000 - (r.sinceShow ?? 0) },
+    { k: 'price', h: 'Pris Mkr', num: 1, sort: (r) => r.price },
+    { k: 'soldPrice', h: 'Slutpris Mkr', num: 1, sort: (r) => r.soldPrice, ended: 1 },
+    { k: 'soldVs', h: 'Mot utrop', num: 1, sort: (r) => r.soldVs, ended: 1 },
+    { k: 'sqmPrice', h: 'kr/m²', num: 1, sort: (r) => r.sqmPrice },
+    { k: 'vsArea', h: 'Mot område', num: 1, sort: (r) => r.vsArea },
+    { k: 'est', h: 'Booli-värd.', num: 1, sort: (r) => r.est },
+    { k: 'vsEst', h: 'Utrop mot värd.', num: 1, sort: (r) => r.vsEst },
+    { k: 'nextShow', h: 'Nästa visning', num: 1, sort: (r) => r.showMatch ?? r.nextShow },
+    { k: 'sqm', h: 'm²', num: 1, sort: (r) => r.sqm },
+    { k: 'rooms', h: 'Rum', num: 1, sort: (r) => r.rooms },
+    { k: 'fee', h: 'Avgift', num: 1, sort: (r) => r.fee },
+    { k: 'feeSqm', h: 'Avg/m²', num: 1, sort: (r) => r.feeSqm, off: 1 },
+    { k: 'daysOut', h: 'Dagar ute', num: 1, sort: (r) => r.daysOut },
+    { k: 'shows', h: 'Visningar', num: 1, sort: (r) => r.pastN * 10 + r.upN },
+    { k: 'sinceShow', h: 'Sedan visning', num: 1, sort: (r) => r.sinceShow },
+    { k: 'pmove', h: 'Prisändr.', num: 1, sort: (r) => r.pmove },
+    { k: 'views', h: 'Sidvisn.', num: 1, sort: (r) => r.views },
+    { k: 'vpd', h: 'Visn./dag', num: 1, sort: (r) => r.vpd, off: 1 },
+    { k: 'year', h: 'Byggår', num: 1, sort: (r) => r.year },
+    { k: 'floor', h: 'Våning', sort: (r) => r.floor || '', off: 1 },
+    { k: 'agency', h: 'Mäklare', sort: (r) => r.agency || '', off: 1 },
+  ];
+  const cell = {
+    mark: (r) => { const s = marks[r.id]?.s; return `<button class="mkb" data-act="cycle" data-id="${esc(r.id)}" data-s="${s || ''}" aria-label="Markering">${s === 'fav' ? '★' : s === 'maybe' ? '◐' : s === 'no' ? '✕' : '☆'}</button>`; },
+    addr: (r) => `<a href="${esc(r.hUrl || r.bUrl || '#')}" target="_blank" rel="noopener" data-act="link">${esc(r.addr || r.slug)}</a>${r.onlyB ? '<span class="src" title="Finns bara på Booli">Booli</span>' : ''}<small>${esc(r.area || r.areaN)}${r.brf ? ' · ' + esc(r.brf) : ''}</small>`,
+    sig: (r) => r.sig,
+    price: (r) => mkr(r.price),
+    soldPrice: (r) => r.soldPrice ? mkr(r.soldPrice) : '<span class="sub">ej publicerat</span>',
+    soldVs: (r) => r.soldVs == null ? '–' : `${r.soldVs > 0 ? '+' : ''}${(r.soldVs * 100).toFixed(0)} %`,
+    sqmPrice: (r) => kr(r.sqmPrice),
+    est: (r) => r.est ? mkr(r.est) : '–',
+    vsEst: (r) => r.vsEst == null ? '–' : `<span class="${r.vsEst <= -0.05 ? 'down' : r.vsEst >= 0.05 ? 'up' : ''}">${r.vsEst > 0 ? '+' : ''}${(r.vsEst * 100).toFixed(0)} %</span>`,
+    nextShow: (r) => { const s = r.showMatch ?? r.nextShow; return s ? esc(dt(s)) : '–'; },
+    vsArea: (r) => r.vsArea == null ? '–' : `<span class="${r.vsArea <= -0.05 ? 'down' : r.vsArea >= 0.05 ? 'up' : ''}">${r.vsArea > 0 ? '+' : ''}${(r.vsArea * 100).toFixed(0)} %</span>`,
+    sqm: (r) => r.sqm == null ? '–' : String(r.sqm).replace('.', ','),
+    rooms: (r) => r.rooms == null ? '–' : String(r.rooms).replace('.', ','),
+    fee: (r) => kr(r.fee),
+    feeSqm: (r) => r.feeSqm == null ? '–' : r.feeSqm.toFixed(0),
+    daysOut: (r) => r.daysOut ?? '–',
+    shows: (r) => `${r.pastN}<span class="sub"> / ${r.upN}</span>`,
+    sinceShow: (r) => r.sinceShow == null ? '–' : `${Math.floor(r.sinceShow)} d`,
+    pmove: (r) => r.pmove == null ? '–' : `<span class="${r.pmove < 0 ? 'down' : 'up'}">${r.pmove > 0 ? '+' : ''}${(r.pmove * 100).toFixed(0)} %</span>`,
+    views: (r) => kr(r.views),
+    vpd: (r) => r.vpd == null ? '–' : kr(r.vpd),
+    year: (r) => r.year ?? '–',
+    floor: (r) => esc(r.floor || '–'),
+    agency: (r) => esc(r.agency || '–'),
+  };
+
+  // ---------- vyer ----------
+  const VIEWS = [
+    { k: 'active', h: 'Alla aktiva', f: (r) => !r.ended && !r.soon },
+    { k: 'neg', h: 'Visad, inga bud', f: (r) => r.isNeg, sort: ['sig', 1] },
+    { k: 'underEst', h: 'Under Boolis värdering', f: (r) => !r.ended && !r.soon && r.vsEst != null && r.vsEst <= -0.05, sort: ['vsEst', 1] },
+    { k: 'cheap', h: 'Billigt för området', f: (r) => !r.ended && r.vsArea != null && r.vsArea <= -0.1, sort: ['vsArea', 1] },
+    { k: 'price', h: 'Prisändrade', f: (r) => !r.ended && r.pmove != null && r.pmove !== 0, sort: ['pmove', 1] },
+    { k: 'new', h: 'Nya, 3 dagar', f: (r) => !r.ended && !r.soon && r.daysOut != null && r.daysOut <= 3, sort: ['daysOut', 1] },
+    { k: 'show', h: 'Visning kommande', f: (r) => !r.ended && r.upN > 0, sort: ['nextShow', 1] },
+    { k: 'soon', h: 'Snart till salu', f: (r) => r.soon, sort: ['daysOut', 1] },
+    { k: 'onlyB', h: 'Bara på Booli', f: (r) => r.onlyB && !r.ended && !r.soon },
+    { k: 'bid', h: 'Budgivning', f: (r) => r.sigKey === 'bid' },
+    { k: 'fav', h: 'Markerade', f: (r) => marks[r.id]?.s === 'fav' || marks[r.id]?.s === 'maybe' },
+    { k: 'ended', h: 'Sålda och borttagna', f: (r) => r.ended, sort: ['soldVs', -1] },
+  ];
+
+  // ---------- state ----------
+  const store = { get(k, d) { try { const v = localStorage.getItem('bj2:' + k); return v ? JSON.parse(v) : d; } catch { return d; } }, set(k, v) { try { localStorage.setItem('bj2:' + k, JSON.stringify(v)); } catch {} } };
+  let rows = [];
+  let meta = null;
+  let marks = {};
+  let canWrite = true;
+  const st = Object.assign({ tab: 'list', view: 'active', sort: ['sig', 1], areas: [], show: { k: 'all', from: '', to: '' }, hidden: COLS.filter((c) => c.off).map((c) => c.k) }, store.get('state', {}));
+  st.open = null;
+  if (!COLS.some((c) => c.k === st.sort[0])) st.sort = ['sig', 1];
+  const FILTER_IDS = ['q', 'pmin', 'pmax', 'smin', 'smax', 'rmin', 'fmax', 'dmin'];
+  const CHK_IDS = ['balc', 'elev', 'hideNo'];
+  const $ = (id) => document.getElementById(id);
+  const savedF = store.get('filters', {});
+  FILTER_IDS.forEach((id) => { if (savedF[id] != null) $(id).value = savedF[id]; });
+  CHK_IDS.forEach((id) => { if (savedF[id] != null) $(id).checked = savedF[id]; });
+  const val = (id) => { const v = $(id).value.trim(); return v === '' ? null : Number(v.replace(',', '.')); };
+
+  function persist() {
+    const f = {}; FILTER_IDS.forEach((id) => f[id] = $(id).value); CHK_IDS.forEach((id) => f[id] = $(id).checked);
+    store.set('filters', f); store.set('state', { tab: st.tab, view: st.view, sort: st.sort, areas: st.areas, hidden: st.hidden, show: st.show });
+  }
+
+  // ---------- visningsfilter ----------
+  const dayKeyFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
+  const dayKey = (d) => dayKeyFmt.format(d instanceof Date ? d : new Date(d * 1000));
+  const addDays = (k, n) => { const d = new Date(k + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+  const wdOf = (k) => (new Date(k + 'T12:00:00Z').getUTCDay() + 6) % 7; // 0 = måndag
+  const WD = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
+  const fmtShort = new Intl.DateTimeFormat('sv-SE', { timeZone: 'UTC', day: 'numeric', month: 'short' });
+  const shortK = (k) => fmtShort.format(new Date(k + 'T12:00:00Z')).replace('.', '');
+  function showRange(sh) {
+    const today = dayKey(new Date());
+    const wd = wdOf(today);
+    if (sh.k === 'today') return [today, today];
+    if (sh.k === 'tomorrow') { const k = addDays(today, 1); return [k, k]; }
+    if (sh.k.startsWith('wd')) { const target = +sh.k.slice(2); const k = addDays(today, (target - wd + 7) % 7); return [k, k]; }
+    if (sh.k === 'weekend') { const sat = addDays(today, wd === 6 ? -1 : (5 - wd + 7) % 7); return [wd === 6 ? today : sat, addDays(sat, 1)]; }
+    if (sh.k === 'thisweek') return [today, addDays(today, 6 - wd)];
+    if (sh.k === 'nextweek') { const mon = addDays(today, 7 - wd); return [mon, addDays(mon, 6)]; }
+    if (sh.k === 'custom') return [sh.from || today, sh.to || sh.from || addDays(today, 365)];
+    return null;
+  }
+  function renderShowChips() {
+    const today = dayKey(new Date()); const wd = wdOf(today);
+    const chips = [['all', 'Alla'], ['today', 'Idag'], ['tomorrow', 'Imorgon']];
+    for (let i = 2; i < 7; i++) { const k = addDays(today, i); chips.push(['wd' + wdOf(k), `${WD[wdOf(k)]} ${shortK(k)}`]); }
+    chips.push(['weekend', 'Helgen'], ['thisweek', 'Resten av veckan'], ['nextweek', 'Nästa vecka'], ['custom', 'Välj datum']);
+    $('showchips').innerHTML = chips.map(([k, l]) => `<button type="button" data-show="${k}" aria-pressed="${st.show.k === k}">${esc(l)}</button>`).join('') +
+      `<span class="custom" ${st.show.k === 'custom' ? '' : 'hidden'}><input type="date" id="showFrom" value="${esc(st.show.from || today)}" aria-label="Visning från"> – <input type="date" id="showTo" value="${esc(st.show.to || st.show.from || today)}" aria-label="Visning till"></span>`;
+  }
+  function applyShowFilter(list) {
+    const rg = showRange(st.show);
+    const t = now();
+    list.forEach((r) => { r.showMatch = null; });
+    if (!rg) return list;
+    return list.filter((r) => {
+      const all = [...new Set([...(r.oh || []), ...(r.ohSeen || [])])].filter((s) => s >= t - 3600).sort((a, b) => a - b);
+      const hit = all.find((s) => { const k = dayKey(s); return k >= rg[0] && k <= rg[1]; });
+      if (hit) r.showMatch = hit;
+      return !!hit;
+    });
+  }
+
+  // filter utan vy: används av nyckeltal och analys
+  function base() {
+    const q = $('q').value.trim().toLowerCase();
+    const pmin = val('pmin'), pmax = val('pmax'), smin = val('smin'), smax = val('smax'), rmin = val('rmin'), fmax = val('fmax'), dmin = val('dmin');
+    const balc = $('balc').checked, elev = $('elev').checked, hideNo = $('hideNo').checked;
+    return applyShowFilter(rows).filter((r) => {
+      if (hideNo && marks[r.id]?.s === 'no' && !(st.tab === 'list' && st.view === 'fav')) return false;
+      if (st.areas.length && !st.areas.includes(r.areaN)) return false;
+      if (q && !`${r.addr} ${r.area} ${r.brf} ${r.agency}`.toLowerCase().includes(q)) return false;
+      if (pmin != null && (r.price ?? 0) < pmin * 1e6) return false;
+      if (pmax != null && (r.price ?? 1e12) > pmax * 1e6) return false;
+      if (smin != null && (r.sqm ?? 0) < smin) return false;
+      if (smax != null && (r.sqm ?? 1e9) > smax) return false;
+      if (rmin != null && (r.rooms ?? 0) < rmin) return false;
+      if (fmax != null && (r.fee ?? 1e9) > fmax) return false;
+      if (dmin != null && (r.daysOut ?? 0) < dmin) return false;
+      if (balc && r.balc !== true) return false;
+      if (elev && r.elev !== true) return false;
+      return true;
+    });
+  }
+  function sorted(list) {
+    const [k, dir] = st.sort;
+    const col = COLS.find((c) => c.k === k) || COLS[2];
+    return list.slice().sort((a, b) => {
+      const x = col.sort(a), y = col.sort(b);
+      if (x == null && y == null) return 0;
+      if (x == null) return 1;
+      if (y == null) return -1;
+      return (x < y ? -1 : x > y ? 1 : 0) * dir;
+    });
+  }
+
+  // ---------- nyckeltal ----------
+  function renderTiles(b) {
+    if (!rows.length) { $('tiles').innerHTML = ''; return; }
+    const act = b.filter((r) => !r.ended && !r.soon);
+    const t = now();
+    const neg = act.filter((r) => r.isNeg), negSure = act.filter((r) => r.sigKey === 'neg');
+    const bid = act.filter((r) => r.sigKey === 'bid');
+    const new7 = act.filter((r) => r.pub && t - r.pub <= 7 * DAY);
+    const ended = b.filter((r) => r.ended);
+    const before = ended.filter((r) => r.status === 'DeactivatedBeforeOpenHouse');
+    const tile = (lab, val, note, hl) => `<div class="tile${hl ? ' hl' : ''}"><span class="lab">${lab}</span><span class="val">${val}</span><span class="tnote">${note || '&nbsp;'}</span></div>`;
+    $('tiles').innerHTML = [
+      tile('Aktiva objekt', act.length, st.areas.length ? esc(st.areas.join(', ')) : 'hela urvalet'),
+      tile('Visade utan bud', neg.length, negSure.length ? `${negSure.length} bekräftade` : 'alla troliga än så länge', true),
+      tile('I budgivning', bid.length, act.length ? pct(bid.length / act.length) + ' av aktiva' : ''),
+      tile('Nya senaste 7 dagarna', new7.length, ''),
+      tile('Median kr/m²', kr(median(act.map((r) => r.sqmPrice))), `avgift ${kr(median(act.map((r) => r.feeSqm)))} kr/m² och mån`),
+      tile('Median dagar ute', kr(median(act.map((r) => r.daysOut))), `längst ${kr(Math.max(0, ...act.map((r) => r.daysOut || 0)))} dagar`),
+      tile('Sålda före visning', before.length, (() => { const p = median(ended.map((r) => r.soldVs)); return p != null ? `median ${p > 0 ? '+' : ''}${(p * 100).toFixed(0)} % över utrop` : (ended.length ? `av ${ended.length} avslutade` : ''); })()),
+    ].join('');
+  }
+
+  // ---------- lista ----------
+  function renderViews(b) {
+    $('views').innerHTML = VIEWS.map((v) => `<button class="view" type="button" data-view="${v.k}" aria-pressed="${st.view === v.k}">${esc(v.h)}<span class="n">${b.filter(v.f).length}</span></button>`).join('');
+  }
+  function renderAreas() {
+    const present = [...new Set(rows.filter((r) => !r.ended && !r.soon).map((r) => r.areaN))];
+    const order = AREAS.map((a) => a[0]).concat('Övrigt').filter((a) => present.includes(a));
+    $('areas').innerHTML = order.map((a) => `<button type="button" data-area="${esc(a)}" aria-pressed="${st.areas.includes(a)}">${esc(a)}</button>`).join('');
+  }
+  function renderCols() {
+    $('colpanel').innerHTML = COLS.filter((c) => !c.fixed && !c.ended).map((c) => `<label class="chk"><input type="checkbox" data-col="${c.k}" ${st.hidden.includes(c.k) ? '' : 'checked'}> ${esc(c.h)}</label>`).join('');
+  }
+  const visibleCols = () => COLS.filter((c) => !st.hidden.includes(c.k) && (!c.ended || st.view === 'ended'));
+  function renderHead() {
+    $('thead').innerHTML = visibleCols().map((c) => {
+      const s = st.sort[0] === c.k ? (st.sort[1] > 0 ? 'ascending' : 'descending') : null;
+      return `<th class="${c.num ? 'num ' : ''}${c.cls && c.cls.includes('stick') ? 'stick mk' : ''}" data-sort="${c.k}" ${s ? `aria-sort="${s}"` : ''} scope="col">${esc(c.h)}</th>`;
+    }).join('');
+  }
+  function spark(vh) {
+    if (!vh || vh.length < 2) return '<span class="sub">Byggs upp dag för dag</span>';
+    const W = 260, H = 46, P = 4;
+    const ys = vh.map((v) => v[1]); const min = Math.min(...ys), max = Math.max(...ys) || 1;
+    const pts = vh.map((v, i) => [P + (i * (W - 2 * P)) / (vh.length - 1), H - P - ((v[1] - min) / Math.max(1, max - min)) * (H - 2 * P)]);
+    const line = pts.map((p) => p.map((n) => n.toFixed(1)).join(',')).join(' ');
+    const last = pts[pts.length - 1];
+    return `<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="Sidvisningar över tid"><polygon points="${P},${H - P} ${line} ${W - P},${H - P}" fill="var(--c-neg)" fill-opacity=".1"/><polyline points="${line}" fill="none" stroke="var(--c-neg)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="4" fill="var(--c-neg)" stroke="var(--surface)" stroke-width="2"/></svg>`;
+  }
+  function detailRow(r, span) {
+    const t = now();
+    const shows = (r.ohSeen || []).slice().sort((a, b) => a - b);
+    const m = marks[r.id] || {};
+    const hist = r.vh && r.vh.length ? `${r.vh.length} mätningar, ${esc(r.vh[0][0])} – ${esc(r.vh[r.vh.length - 1][0])}` : '';
+    return `<tr class="detail"><td colspan="${span}"><div class="dgrid">
+      <div><h4>Objekt</h4><dl class="kv">
+        <dt>Utropspris</dt><dd>${kr(r.price)} kr</dd>
+        ${r.price0 && r.price0 !== r.price ? `<dt>Först sett</dt><dd>${kr(r.price0)} kr</dd>` : ''}
+        ${r.pchg && r.pchg.orig ? `<dt>Hemnet: ursprungligt</dt><dd>${esc(r.pchg.orig)} (${esc(r.pchg.pct || '')})</dd>` : ''}
+        <dt>kr/m²</dt><dd>${kr(r.sqmPrice)}${r.vsArea != null ? ` (${r.vsArea > 0 ? '+' : ''}${(r.vsArea * 100).toFixed(0)} % mot ${esc(r.areaN)})` : ''}</dd>
+        <dt>Avgift</dt><dd>${kr(r.fee)} kr/mån</dd>
+        <dt>Driftkostnad</dt><dd>${r.run ? kr(r.run) + ' kr/år' : '–'}</dd>
+        <dt>Våning</dt><dd>${esc(r.floor || '–')}</dd>
+        <dt>Byggår</dt><dd>${r.year ?? '–'}</dd>
+        <dt>Balkong / hiss</dt><dd>${r.balc === true ? 'ja' : r.balc === false ? 'nej' : '?'} / ${r.elev === true ? 'ja' : r.elev === false ? 'nej' : '?'}</dd>
+        <dt>Förening</dt><dd>${esc(r.brf || '–')}</dd>
+        <dt>Mäklare</dt><dd>${esc(r.agency || '–')}</dd>
+      </dl></div>
+      <div><h4>Visningar och bud</h4><ul class="shows">${shows.length ? shows.map((s) => `<li class="${s < t - 3600 ? 'past' : ''}">${esc(dt(s))}${s >= t - 3600 ? calLink(r, s) : ''}</li>`).join('') : '<li class="sub">Inga visningar sedda ännu</li>'}</ul>
+        <dl class="kv" style="margin-top:10px">
+          <dt>Publicerad</dt><dd>${esc(d0(r.pub))}</dd>
+          <dt>Först i listan</dt><dd>${esc(d0(r.first))}</dd>
+          <dt>Budgivning</dt><dd>${r.bid ? 'startad' + (r.bidAt ? ' (sedd ' + esc(d0(r.bidAt)) + ')' : '') : 'nej'}${r.vbid ? ', verifierad' : ''}</dd>
+          ${r.ended ? `<dt>Avslutad</dt><dd>${esc(d0(r.soldAt || r.endedAt || r.goneAt))}</dd>` : ''}
+          ${r.soldPrice ? `<dt>Slutpris</dt><dd>${kr(r.soldPrice)} kr (${r.soldVs > 0 ? '+' : ''}${(r.soldVs * 100).toFixed(0)} % mot utrop)</dd>` : ''}
+        </dl></div>
+      <div><h4>Läge</h4>${r.lat ? `<div class="minimapL" id="mini-${esc(r.id)}"></div>` : '<span class="sub">Koordinater saknas</span>'}<h4 style="margin-top:12px">Sidvisningar på Hemnet</h4>${spark(r.vh)}<div class="sub">${hist}</div>
+        ${r.b ? `<dl class="kv" style="margin-top:10px"><dt>Booli-värdering</dt><dd>${r.b.est ? kr(r.b.est) + ' kr' : 'saknas'}${r.b.estLo && r.b.estHi ? ` (${mkr(r.b.estLo)}–${mkr(r.b.estHi)} Mkr)` : ''}</dd>${r.vsEst != null ? `<dt>Utrop mot värdering</dt><dd>${r.vsEst > 0 ? '+' : ''}${(r.vsEst * 100).toFixed(0)} %</dd>` : ''}${r.b.views != null ? `<dt>Sidvisningar Booli</dt><dd>${kr(r.b.views)}</dd>` : ''}</dl>` : ''}
+        <div class="links">${r.hUrl ? `<a href="${esc(r.hUrl)}" target="_blank" rel="noopener">Öppna på Hemnet</a>` : ''}${r.bUrl ? `<a href="${esc(r.bUrl)}" target="_blank" rel="noopener">Öppna på Booli</a>` : ''}${r.lat ? `<a href="https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}" target="_blank" rel="noopener">Karta</a>` : ''}</div></div>
+      <div><h4>Vår bedömning</h4>
+        <div class="marks" role="group" aria-label="Markering">
+          ${[['fav', '★ Intressant'], ['maybe', '◐ Kanske'], ['no', '✕ Nej']].map(([s, l]) => `<button type="button" data-act="mark" data-id="${esc(r.id)}" data-s="${s}" aria-pressed="${m.s === s}" >${l}</button>`).join('')}
+        </div>
+        <textarea class="note" id="note-${esc(r.id)}" data-id="${esc(r.id)}" placeholder="Anteckning, t.ex. vad mäklaren sa" >${esc(m.note || '')}</textarea>
+        <div class="sub" id="ns-${esc(r.id)}">${m.by ? `Senast ändrad av ${esc(m.by)}${m.ts ? ', ' + esc(d0(Math.round(m.ts / 1000))) : ''}` : 'Sparas för er båda'}</div>
+      </div>
+    </div></td></tr>`;
+  }
+  function renderList(b) {
+    renderViews(b); renderHead();
+    const v = VIEWS.find((x) => x.k === st.view) || VIEWS[0];
+    const list = sorted(b.filter(v.f));
+    const cols = visibleCols();
+    if (!rows.length) {
+      $('tbody').innerHTML = `<tr><td class="empty" colspan="${cols.length}"><b>Hämtar objekt …</b>Listan fylls från senaste hämtningen.</td></tr>`;
+    } else if (!list.length) {
+      $('tbody').innerHTML = `<tr><td class="empty" colspan="${cols.length}"><b>Inga objekt matchar</b>Lätta på filtren eller byt vy.</td></tr>`;
+    } else {
+      $('tbody').innerHTML = list.map((r) => {
+        const tr = `<tr class="row${r.ended ? ' ended' : ''}${st.open === r.id ? ' open' : ''}" data-id="${esc(r.id)}">${cols.map((c) => `<td class="${c.num ? 'num ' : ''}${c.cls || ''}">${cell[c.k](r)}</td>`).join('')}</tr>`;
+        return st.open === r.id ? tr + detailRow(r, cols.length) : tr;
+      }).join('');
+    }
+  }
+
+  // ---------- diagram ----------
+  const tips = {};
+  function chartBox(id, h) {
+    const el = $(id);
+    const w = Math.max(260, Math.round(el.clientWidth || 600));
+    return { el, w, h };
+  }
+  function niceTicks(min, max, n = 4) {
+    if (max <= min) max = min + 1;
+    const span = max - min, step0 = span / n, mag = 10 ** Math.floor(Math.log10(step0));
+    const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => span / s <= n) || 10 * mag;
+    const lo = Math.floor(min / step) * step, hi = Math.ceil(max / step) * step;
+    const out = []; for (let v = lo; v <= hi + step / 2; v += step) out.push(+v.toFixed(6));
+    return out;
+  }
+  const compact = (v) => Math.abs(v) >= 1000 ? `${(v / 1000).toLocaleString('sv-SE', { maximumFractionDigits: 0 })}k` : nf0.format(v);
+  // rundad topp, rak bas
+  const colPath = (x, y, w, h) => { const r = Math.min(4, w / 2, h); return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`; };
+  function bindTips(el, items) {
+    tips[el.id] = items;
+    let tip = el.querySelector('.tip');
+    if (!tip) { tip = document.createElement('div'); tip.className = 'tip'; tip.hidden = true; el.appendChild(tip); }
+    const svg = el.querySelector('svg');
+    const show = (e) => {
+      const i = e.target.closest('[data-i]'); if (!i) { tip.hidden = true; return; }
+      tip.innerHTML = tips[el.id][+i.dataset.i]; tip.hidden = false;
+      const br = el.getBoundingClientRect(); const pt = e.touches ? e.touches[0] : e;
+      let x = pt.clientX - br.left + 12, y = pt.clientY - br.top + 12;
+      if (x + tip.offsetWidth > br.width) x = pt.clientX - br.left - tip.offsetWidth - 12;
+      tip.style.left = Math.max(0, x) + 'px'; tip.style.top = y + 'px';
+    };
+    svg.addEventListener('mousemove', show); svg.addEventListener('mouseleave', () => tip.hidden = true);
+    svg.addEventListener('touchstart', show, { passive: true });
+  }
+
+  function columns(id, data, opts = {}) {
+    // data: [{label, v, tip}]
+    const { el, w } = chartBox(id); const h = opts.h || 200;
+    const M = { t: 16, r: 8, b: 34, l: 40 };
+    if (!data.length) { el.innerHTML = '<p class="sub">Ingen data i urvalet.</p>'; return; }
+    const max = Math.max(1, ...data.map((d) => d.v));
+    const ticks = niceTicks(0, max, 4); const top = ticks[ticks.length - 1];
+    const iw = w - M.l - M.r, ih = h - M.t - M.b, band = iw / data.length, bw = Math.min(24, Math.max(3, band - 2));
+    const y = (v) => M.t + ih - (v / top) * ih;
+    const every = Math.ceil(data.length / Math.floor(iw / 46));
+    let s = `<svg viewBox="0 0 ${w} ${h}" height="${h}" role="img" aria-label="${esc(opts.aria || '')}">`;
+    ticks.forEach((t) => { s += `<line x1="${M.l}" x2="${w - M.r}" y1="${y(t)}" y2="${y(t)}" stroke="var(--grid)"/><text class="num" x="${M.l - 6}" y="${y(t) + 3.5}" text-anchor="end">${compact(t)}</text>`; });
+    data.forEach((d, i) => {
+      const cx = M.l + band * i + band / 2;
+      if (d.v > 0) s += `<path d="${colPath(cx - bw / 2, y(d.v), bw, M.t + ih - y(d.v))}" fill="${opts.color || 'var(--c-neg)'}"/>`;
+      if (i % every === 0) s += `<text x="${cx}" y="${h - M.b + 16}" text-anchor="middle">${esc(d.label)}</text>`;
+      s += `<rect class="hit" data-i="${i}" x="${M.l + band * i}" y="${M.t}" width="${band}" height="${ih}"/>`;
+    });
+    if (opts.marks && opts.marks.length) {
+      opts.marks.forEach((m) => { const cx = M.l + band * m.i + band / 2; s += `<line x1="${cx}" x2="${cx}" y1="${M.t + ih + 3}" y2="${M.t + ih + 10}" stroke="var(--fg)" stroke-width="2" stroke-linecap="round"/>`; });
+    }
+    s += `<line x1="${M.l}" x2="${w - M.r}" y1="${M.t + ih}" y2="${M.t + ih}" stroke="var(--line)"/></svg>`;
+    el.innerHTML = s; bindTips(el, data.map((d) => d.tip));
+  }
+
+  function line(id, pts, opts = {}) {
+    // pts: [{x: unix, v, tip}]
+    const { el, w } = chartBox(id); const h = opts.h || 200;
+    const M = { t: 16, r: 16, b: 34, l: 40 };
+    if (pts.length < 2) {
+      el.innerHTML = `<div style="height:${h}px;display:grid;place-items:center;text-align:center;background:var(--bg);border-radius:4px"><div><div style="font-size:32px;font-weight:600">${pts.length ? kr(pts[0].v) : '–'}</div><div class="sub">objekt vid första hämtningen${pts.length ? ', ' + esc(d0(pts[0].x)).replace(/\.$/, '') : ''}.<br>Kurvan ritas när det finns minst två körningar.</div></div></div>`;
+      return;
+    }
+    const xs = pts.map((p) => p.x), x0 = Math.min(...xs), x1 = Math.max(...xs);
+    const vals = pts.map((p) => p.v); const ticks = niceTicks(Math.min(...vals) * 0.9, Math.max(...vals) * 1.05, 4);
+    const lo = ticks[0], hi = ticks[ticks.length - 1];
+    const iw = w - M.l - M.r, ih = h - M.t - M.b;
+    const X = (x) => M.l + ((x - x0) / Math.max(1, x1 - x0)) * iw, Y = (v) => M.t + ih - ((v - lo) / (hi - lo)) * ih;
+    let s = `<svg viewBox="0 0 ${w} ${h}" height="${h}" role="img" aria-label="${esc(opts.aria || '')}">`;
+    ticks.forEach((t) => { s += `<line x1="${M.l}" x2="${w - M.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--grid)"/><text class="num" x="${M.l - 6}" y="${Y(t) + 3.5}" text-anchor="end">${compact(t)}</text>`; });
+    const d = pts.map((p) => `${X(p.x).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ');
+    s += `<polygon points="${X(x0)},${M.t + ih} ${d} ${X(x1)},${M.t + ih}" fill="var(--c-neg)" fill-opacity=".1"/>`;
+    s += `<polyline points="${d}" fill="none" stroke="var(--c-neg)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const lp = pts[pts.length - 1];
+    s += `<circle cx="${X(lp.x)}" cy="${Y(lp.v)}" r="4" fill="var(--c-neg)" stroke="var(--surface)" stroke-width="2"/><text class="num lbl" x="${X(lp.x) - 6}" y="${Y(lp.v) - 9}" text-anchor="end">${kr(lp.v)}</text>`;
+    s += `<text x="${M.l}" y="${h - M.b + 16}">${esc(fmtDay.format(new Date(x0 * 1000)))}</text><text x="${w - M.r}" y="${h - M.b + 16}" text-anchor="end">${esc(fmtDay.format(new Date(x1 * 1000)))}</text>`;
+    const half = iw / (pts.length - 1) / 2;
+    pts.forEach((p, i) => { s += `<rect class="hit" data-i="${i}" x="${X(p.x) - half}" y="${M.t}" width="${half * 2}" height="${ih}"/>`; });
+    s += `<line x1="${M.l}" x2="${w - M.r}" y1="${M.t + ih}" y2="${M.t + ih}" stroke="var(--line)"/></svg>`;
+    el.innerHTML = s; bindTips(el, pts.map((p) => p.tip));
+  }
+
+  function scatter(id, list) {
+    const { el, w } = chartBox(id); const h = Math.min(420, Math.max(280, Math.round(w * 0.42)));
+    const M = { t: 14, r: 14, b: 40, l: 56 };
+    const pts = list.filter((r) => r.sqmPrice && r.daysOut != null);
+    if (!pts.length) { el.innerHTML = '<p class="sub">Ingen data i urvalet.</p>'; return; }
+    const xmax = Math.max(14, ...pts.map((r) => r.daysOut));
+    const xt = [0, 7, 14, 30, 60, 120, 240, 365, 730].filter((t, i, a) => t <= xmax || a[i - 1] < xmax);
+    const yt = niceTicks(Math.min(...pts.map((r) => r.sqmPrice)), Math.max(...pts.map((r) => r.sqmPrice)), 4);
+    const iw = w - M.l - M.r, ih = h - M.t - M.b;
+    const X = (v) => M.l + (Math.sqrt(Math.max(0, v)) / Math.sqrt(xt[xt.length - 1])) * iw, Y = (v) => M.t + ih - ((v - yt[0]) / (yt[yt.length - 1] - yt[0])) * ih;
+    const mx = median(pts.map((r) => r.sqmPrice));
+    let s = `<svg viewBox="0 0 ${w} ${h}" height="${h}" role="img" aria-label="Kronor per kvadratmeter mot dagar ute">`;
+    yt.forEach((t) => { s += `<line x1="${M.l}" x2="${w - M.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--grid)"/><text class="num" x="${M.l - 6}" y="${Y(t) + 3.5}" text-anchor="end">${compact(t)}</text>`; });
+    xt.forEach((t) => { s += `<text class="num" x="${X(t)}" y="${M.t + ih + 16}" text-anchor="middle">${t}</text>`; });
+    s += `<text x="${M.l + iw}" y="${h - 4}" text-anchor="end">dagar ute (kvadratrotsskala) →</text><text x="${M.l}" y="${M.t - 4}" text-anchor="start" style="display:none"></text>`;
+    s += `<line x1="${M.l}" x2="${w - M.r}" y1="${Y(mx)}" y2="${Y(mx)}" stroke="var(--faint)" stroke-dasharray="0" stroke-opacity=".6"/><text x="${w - M.r}" y="${Y(mx) - 5}" text-anchor="end">median ${kr(mx)} kr/m²</text>`;
+    const order = (r) => r.isNeg ? 2 : r.sigKey === 'bid' ? 1 : 0;
+    const sorted = pts.slice().sort((a, b) => order(a) - order(b));
+    sorted.forEach((r, i) => {
+      const c = r.isNeg ? 'var(--c-neg)' : r.sigKey === 'bid' ? 'var(--c-bid)' : 'var(--c-rest)';
+      const mk = marks[r.id]?.s === 'fav' || marks[r.id]?.s === 'maybe';
+      const cx = X(r.daysOut), cy = Y(r.sqmPrice);
+      s += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${mk ? 6 : 4.5}" fill="${c}" stroke="${mk ? 'var(--fg)' : 'var(--surface)'}" stroke-width="2"/>`;
+      s += `<circle class="hit" data-i="${i}" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="10"/>`;
+    });
+    s += `<line x1="${M.l}" x2="${w - M.r}" y1="${M.t + ih}" y2="${M.t + ih}" stroke="var(--line)"/></svg>`;
+    el.innerHTML = s;
+    bindTips(el, sorted.map((r) => `<b>${esc(r.addr)}</b><br><span class="t2">${esc(r.areaN)} · ${String(r.sqm).replace('.', ',')} m² · ${mkr(r.price)} Mkr</span><br>${kr(r.sqmPrice)} kr/m² (${r.vsArea != null ? (r.vsArea > 0 ? '+' : '') + (r.vsArea * 100).toFixed(0) + ' % mot område' : ''})<br>${r.daysOut} dagar ute · ${r.isNeg ? 'visad, inga bud' : r.sigKey === 'bid' ? 'budgivning' : 'övrig'}`));
+    el.onclick = (e) => { const i = e.target.closest('[data-i]'); if (!i) return; const r = sorted[+i.dataset.i]; st.tab = 'list'; st.view = 'active'; st.open = r.id; renderAll(); setTimeout(() => document.querySelector(`tr.row[data-id="${CSS.escape(r.id)}"]`)?.scrollIntoView({ block: 'center' }), 30); };
+  }
+
+  function hist(id, list, key, opts) {
+    const cap = opts.cap ?? Infinity;
+    const vals = list.map((r) => Math.min(cap, r[key])).filter((v) => v != null && isFinite(v));
+    if (!vals.length) { $(id).innerHTML = '<p class="sub">Ingen data i urvalet.</p>'; return; }
+    const lo = Math.floor(Math.min(...vals) / opts.step) * opts.step, hi = Math.max(...vals);
+    const n = Math.max(1, Math.ceil((hi - lo + 1e-9) / opts.step));
+    const bins = Array.from({ length: n }, (_, i) => ({ a: lo + i * opts.step, b: lo + (i + 1) * opts.step, c: 0 }));
+    vals.forEach((v) => { bins[Math.min(n - 1, Math.floor((v - lo) / opts.step))].c++; });
+    const marked = list.filter((r) => (marks[r.id]?.s === 'fav' || marks[r.id]?.s === 'maybe') && r[key] != null).map((r) => ({ i: Math.min(n - 1, Math.floor((Math.min(cap, r[key]) - lo) / opts.step)) }));
+    columns(id, bins.map((b, i) => {
+      const last = i === n - 1 && hi >= cap;
+      return { label: last ? opts.lab(b.a) + '+' : opts.lab(b.a), v: b.c, tip: `<b>${last ? opts.fmt(b.a) + ' eller mer' : opts.fmt(b.a) + '–' + opts.fmt(b.b)}</b><br>${b.c} objekt` };
+    }), { h: 170, marks: marked, aria: opts.aria });
+  }
+
+  function renderAnalytics(b) {
+    const act = b.filter((r) => !r.ended && !r.soon);
+    // per område
+    const by = {};
+    act.forEach((r) => (by[r.areaN] ||= []).push(r));
+    const endedBy = {}, premBy = {};
+    b.filter((r) => r.status === 'DeactivatedBeforeOpenHouse').forEach((r) => endedBy[r.areaN] = (endedBy[r.areaN] || 0) + 1);
+    b.filter((r) => r.soldVs != null).forEach((r) => (premBy[r.areaN] ||= []).push(r.soldVs));
+    const stats = (l, name) => ({
+      name, n: l.length,
+      sqm: median(l.map((r) => r.sqmPrice)), fee: median(l.map((r) => r.feeSqm)), days: median(l.map((r) => r.daysOut)),
+      bid: l.length ? l.filter((r) => r.sigKey === 'bid').length / l.length : null,
+      neg: l.length ? l.filter((r) => r.isNeg).length / l.length : null,
+      negN: l.filter((r) => r.isNeg).length,
+      vsEst: median(l.map((r) => r.vsEst)),
+      before: name === 'Totalt' ? Object.values(endedBy).reduce((a, c) => a + c, 0) : (endedBy[name] || 0),
+      prem: name === 'Totalt' ? median([].concat(...Object.values(premBy))) : median(premBy[name] || []),
+      premN: name === 'Totalt' ? [].concat(...Object.values(premBy)).length : (premBy[name] || []).length,
+    });
+    const areas = Object.entries(by).map(([a, l]) => stats(l, a)).sort((x, y) => y.n - x.n);
+    const tot = stats(act, 'Totalt');
+    const maxN = Math.max(1, ...areas.map((a) => a.n)), maxSqm = Math.max(1, ...areas.map((a) => a.sqm || 0));
+    const bar = (v, max, cls, txt) => `<div class="ib"><span class="bar ${cls}" style="width:${Math.round((v / max) * 70)}px"></span><span class="v">${txt}</span></div>`;
+    const rowH = (a, cls = '') => `<tr class="${cls}"><td><b>${esc(a.name)}</b></td>
+      <td class="num">${cls ? a.n : bar(a.n, maxN, 'n', a.n)}</td>
+      <td class="num">${cls ? kr(a.sqm) : bar(a.sqm || 0, maxSqm, 'n', kr(a.sqm))}</td>
+      <td class="num">${a.fee == null ? '–' : a.fee.toFixed(0)}</td>
+      <td class="num">${kr(a.days)}</td>
+      <td class="num">${a.vsEst == null ? '–' : `${a.vsEst > 0 ? '+' : ''}${(a.vsEst * 100).toFixed(0)} %`}</td>
+      <td class="num">${bar(a.bid || 0, 1, 'bid', pct(a.bid))}</td>
+      <td class="num">${bar(a.neg || 0, 1, '', `${pct(a.neg)}<span class="sub"> (${a.negN})</span>`)}</td>
+      <td class="num">${a.before}</td>
+      <td class="num">${a.prem == null ? '–' : `${a.prem > 0 ? '+' : ''}${(a.prem * 100).toFixed(0)} %<span class="sub"> (${a.premN})</span>`}</td></tr>`;
+    $('areatbl').innerHTML = areas.length ? `<thead><tr><th>Område</th><th class="num">Aktiva</th><th class="num">Median kr/m²</th><th class="num">Avgift kr/m²</th><th class="num">Median dagar ute</th><th class="num">Utrop mot Booli-värd.</th><th class="num">Andel i budgivning</th><th class="num">Andel visade utan bud</th><th class="num">Sålda före visning</th><th class="num">Slutpris mot utrop</th></tr></thead><tbody>${areas.map((a) => rowH(a)).join('')}${rowH(tot, 'tot')}</tbody>` : '<tbody><tr><td class="empty">Inga aktiva objekt i urvalet.</td></tr></tbody>';
+
+    scatter('ch-scatter', act);
+
+    // nya per vecka (ISO-vecka efter publicering)
+    const weekStart = (s) => { const d = new Date(s * 1000); const day = (d.getUTCDay() + 6) % 7; return Math.floor((Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) / 1000 - day * DAY)); };
+    const isoWeek = (s) => { const d = new Date(s * 1000); const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())); const dn = (t.getUTCDay() + 6) % 7; t.setUTCDate(t.getUTCDate() - dn + 3); const fy = new Date(Date.UTC(t.getUTCFullYear(), 0, 4)); return 1 + Math.round(((t - fy) / 864e5 - 3 + ((fy.getUTCDay() + 6) % 7)) / 7); };
+    const wk = {};
+    b.filter((r) => r.pub).forEach((r) => { const k = weekStart(r.pub); (wk[k] ||= { n: 0, neg: 0, ended: 0 }); wk[k].n++; if (r.ended) wk[k].ended++; });
+    const keys = Object.keys(wk).map(Number).sort((a, c) => a - c);
+    const weeks = [];
+    if (keys.length) for (let k = keys[0]; k <= keys[keys.length - 1]; k += 7 * DAY) weeks.push(k);
+    columns('ch-weekly', weeks.slice(-16).map((k) => ({ label: 'v' + isoWeek(k), v: wk[k]?.n || 0, tip: `<b>Vecka ${isoWeek(k)}</b>, från ${esc(fmtDay.format(new Date(k * 1000)))}<br>${wk[k]?.n || 0} nya objekt${wk[k]?.ended ? `<br><span class="t2">${wk[k].ended} redan sålda eller borttagna</span>` : ''}` })), { aria: 'Nya objekt per vecka' });
+
+    const runs = (meta?.runs || []).filter((r) => r.total != null);
+    line('ch-supply', runs.map((r) => ({ x: r.at, v: r.total, tip: `<b>${esc(dt(r.at))}</b><br>${r.total} objekt i sökningen` })), { aria: 'Utbud vid varje hämtning' });
+
+    hist('ch-h-sqm', act, 'sqmPrice', { step: 10000, lab: (a) => `${a / 1000}k`, fmt: (a) => kr(a), aria: 'Fördelning kronor per kvadratmeter' });
+    hist('ch-h-days', act, 'daysOut', { step: 7, cap: 63, lab: (a) => `${a}`, fmt: (a) => `${a} d`, aria: 'Fördelning dagar ute' });
+    hist('ch-h-size', act, 'sqm', { step: 10, lab: (a) => `${a}`, fmt: (a) => `${a} m²`, aria: 'Fördelning boarea' });
+  }
+
+  // ---------- kalender ----------
+  const ELSA = 'frisk.elsa@gmail.com';
+  const calStamp = (s) => {
+    const p = Object.fromEntries(new Intl.DateTimeFormat('sv-SE', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(s * 1000)).map((x) => [x.type, x.value]));
+    return { d: `${p.year}${p.month}${p.day}`, t: `${p.hour}${p.minute}${p.second}` };
+  };
+  function calUrl(r, s) {
+    const a = calStamp(s), allDay = a.t === '000000';
+    const b = allDay ? calStamp(s + DAY) : calStamp(s + 30 * 60);
+    const dates = allDay ? `${a.d}/${b.d}` : `${a.d}T${a.t}/${b.d}T${b.t}`;
+    const lines = [
+      r.price ? `Utropspris ${kr(r.price)} kr` : null,
+      r.sqm ? `${String(r.sqm).replace('.', ',')} m², ${String(r.rooms ?? '').replace('.', ',')} rum, avgift ${kr(r.fee)} kr/mån` : null,
+      r.est ? `Booli-värdering ${kr(r.est)} kr` : null,
+      r.hUrl ? `Hemnet: ${r.hUrl}` : null,
+      r.bUrl ? `Booli: ${r.bUrl}` : null,
+    ].filter(Boolean).join('\n');
+    const q = new URLSearchParams({ action: 'TEMPLATE', text: `Visning: ${r.addr}`, dates, ctz: TZ, location: `${r.addr}, Stockholm`, details: lines, add: ELSA });
+    return 'https://calendar.google.com/calendar/render?' + q.toString();
+  }
+  const calLink = (r, s) => `<a class="btn-cal" href="${esc(calUrl(r, s))}" target="_blank" rel="noopener" title="Öppnar Google Kalender med visningen och Elsa som gäst">＋ Kalender</a>`;
+
+  // ---------- karta ----------
+  const colorOf = (r) => r.isNeg ? '#00897b' : r.sigKey === 'bid' ? '#c47f17' : r.soon ? '#3b4f7a' : '#8f9a97';
+  const isMarked = (r) => marks[r.id]?.s === 'fav' || marks[r.id]?.s === 'maybe';
+  let lmap = null, lmapLayer = null, lmapFitted = false, mini = null;
+  function popupHtml(r) {
+    const nx = r.nextShow;
+    return `<h3>${esc(r.addr)}</h3>${r.sig}
+      <div class="row2">${r.price ? mkr(r.price) + ' Mkr' : 'pris saknas'} · ${r.sqm ? String(r.sqm).replace('.', ',') + ' m²' : ''} · ${r.sqmPrice ? kr(r.sqmPrice) + ' kr/m²' : ''}${r.vsEst != null ? ` · ${r.vsEst > 0 ? '+' : ''}${(r.vsEst * 100).toFixed(0)} % mot Booli` : ''}</div>
+      ${nx ? `<div>Nästa visning ${esc(dt(nx))}</div>` : ''}
+      <div class="acts"><button type="button" class="btn" data-goto="${esc(r.id)}">Visa i listan</button>${nx ? calLink(r, nx) : ''}${r.hUrl ? `<a class="btn" href="${esc(r.hUrl)}" target="_blank" rel="noopener">Hemnet</a>` : ''}${r.bUrl ? `<a class="btn" href="${esc(r.bUrl)}" target="_blank" rel="noopener">Booli</a>` : ''}</div>`;
+  }
+  function tiles(m) {
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-bidragsgivare' }).addTo(m);
+  }
+  function renderMap(b) {
+    renderViews(b);
+    if (!window.L) { $('lmap').innerHTML = '<p class="empty">Kartan kunde inte laddas.</p>'; return; }
+    const v = VIEWS.find((x) => x.k === st.view) || VIEWS[0];
+    const list = b.filter(v.f).filter((r) => r.lat && r.lng);
+    if (!lmap) {
+      lmap = L.map('lmap', { preferCanvas: true }).setView([59.335, 18.06], 13);
+      tiles(lmap);
+      lmapLayer = L.layerGroup().addTo(lmap);
+      lmap.on('popupopen', (e) => {
+        e.popup.getElement().querySelector('[data-goto]')?.addEventListener('click', (ev) => {
+          const id = ev.currentTarget.dataset.goto; st.tab = 'list'; st.open = id; renderAll();
+          setTimeout(() => document.querySelector(`tr.row[data-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: 'center' }), 30);
+        });
+      });
+    }
+    setTimeout(() => lmap.invalidateSize(), 0);
+    lmapLayer.clearLayers();
+    const order = (r) => (r.isNeg ? 3 : r.sigKey === 'bid' ? 2 : r.soon ? 1 : 0) + (isMarked(r) ? 10 : 0);
+    list.slice().sort((x, y) => order(x) - order(y)).forEach((r) => {
+      const m = isMarked(r);
+      L.circleMarker([r.lat, r.lng], { radius: m ? 8 : 6, color: m ? '#1a201f' : '#ffffff', weight: 2, fillColor: colorOf(r), fillOpacity: 0.95 })
+        .bindPopup(() => popupHtml(r), { maxWidth: 300 }).addTo(lmapLayer);
+    });
+    $('mapcount').textContent = `${list.length} objekt på kartan`;
+    if (list.length && !lmapFitted) { lmap.fitBounds(L.latLngBounds(list.map((r) => [r.lat, r.lng])), { padding: [30, 30] }); lmapFitted = true; }
+  }
+  function renderMini() {
+    if (mini) { mini.remove(); mini = null; }
+    if (!window.L || !st.open) return;
+    const el = document.getElementById('mini-' + st.open); if (!el) return;
+    const r = rows.find((x) => x.id === st.open); if (!r || !r.lat) { el.remove(); return; }
+    mini = L.map(el, { scrollWheelZoom: false, zoomControl: true }).setView([r.lat, r.lng], 15);
+    tiles(mini);
+    rows.filter((x) => x !== r && x.lat && !x.ended && Math.abs(x.lat - r.lat) < 0.01 && Math.abs(x.lng - r.lng) < 0.02)
+      .forEach((x) => L.circleMarker([x.lat, x.lng], { radius: 4, color: '#ffffff', weight: 1.5, fillColor: colorOf(x), fillOpacity: 0.8 }).bindTooltip(esc(x.addr)).addTo(mini));
+    L.circleMarker([r.lat, r.lng], { radius: 9, color: '#1a201f', weight: 3, fillColor: colorOf(r), fillOpacity: 1 }).addTo(mini);
+  }
+
+  // ---------- samlad rendering ----------
+  function filterSummary() {
+    const n = (st.show.k !== 'all' ? 1 : 0) + FILTER_IDS.filter((id) => $(id).value.trim() !== '').length + st.areas.length + ($('balc').checked ? 1 : 0) + ($('elev').checked ? 1 : 0);
+    $('fsum').textContent = n ? `${n} aktiva` : 'inga aktiva';
+  }
+  function renderAll() {
+    const b = base();
+    $('tab-list').setAttribute('aria-selected', String(st.tab === 'list'));
+    $('tab-an').setAttribute('aria-selected', String(st.tab === 'an'));
+    $('tab-map').setAttribute('aria-selected', String(st.tab === 'map'));
+    $('pane-map').hidden = st.tab !== 'map';
+    $('views').hidden = st.tab === 'an';
+    $('pane-list').hidden = st.tab !== 'list';
+    $('pane-an').hidden = st.tab !== 'an';
+    $('pane-list').style.display = st.tab === 'list' ? 'grid' : 'none';
+    $('colwrap').hidden = st.tab !== 'list';
+    renderTiles(b);
+    if (st.tab === 'list') { renderList(b); renderMini(); } else if (st.tab === 'map') renderMap(b); else renderAnalytics(b);
+    filterSummary(); persist();
+  }
+
+  // ---------- händelser ----------
+  $('tab-list').addEventListener('click', () => { st.tab = 'list'; renderAll(); });
+  $('tab-an').addEventListener('click', () => { st.tab = 'an'; renderAll(); });
+  $('tab-map').addEventListener('click', () => { st.tab = 'map'; renderAll(); });
+  $('views').addEventListener('click', (e) => { const b = e.target.closest('[data-view]'); if (!b) return; st.view = b.dataset.view; const v = VIEWS.find((x) => x.k === st.view); if (v.sort) st.sort = v.sort.slice(); else if (COLS.find((c) => c.k === st.sort[0])?.ended) st.sort = ['sig', 1]; renderAll(); });
+  $('showchips').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-show]'); if (!b) return;
+    st.show = { ...st.show, k: b.dataset.show };
+    if (st.show.k !== 'all') { st.sort = ['nextShow', 1]; if (st.view === 'ended' || st.view === 'soon') st.view = 'active'; }
+    renderShowChips(); renderAll();
+  });
+  $('showchips').addEventListener('change', (e) => {
+    if (e.target.id === 'showFrom') st.show = { ...st.show, from: e.target.value, to: st.show.to && st.show.to >= e.target.value ? st.show.to : e.target.value };
+    if (e.target.id === 'showTo') st.show = { ...st.show, to: e.target.value };
+    renderShowChips(); renderAll();
+  });
+  $('areas').addEventListener('click', (e) => { const b = e.target.closest('[data-area]'); if (!b) return; const a = b.dataset.area; st.areas = st.areas.includes(a) ? st.areas.filter((x) => x !== a) : st.areas.concat(a); b.setAttribute('aria-pressed', st.areas.includes(a)); renderAll(); });
+  FILTER_IDS.forEach((id) => $(id).addEventListener('input', renderAll));
+  CHK_IDS.forEach((id) => $(id).addEventListener('change', renderAll));
+  $('reset').addEventListener('click', () => { FILTER_IDS.forEach((id) => $(id).value = ''); $('balc').checked = false; $('elev').checked = false; $('hideNo').checked = true; st.areas = []; st.show = { k: 'all', from: '', to: '' }; renderShowChips(); renderAreas(); renderAll(); });
+  $('colbtn').addEventListener('click', () => { const p = $('colpanel'); p.hidden = !p.hidden; $('colbtn').setAttribute('aria-expanded', String(!p.hidden)); });
+  document.addEventListener('click', (e) => { if (!e.target.closest('.colmenu')) { $('colpanel').hidden = true; $('colbtn').setAttribute('aria-expanded', 'false'); } });
+  $('colpanel').addEventListener('change', (e) => { const k = e.target.dataset.col; if (!k) return; st.hidden = e.target.checked ? st.hidden.filter((x) => x !== k) : st.hidden.concat(k); renderAll(); });
+  $('thead').addEventListener('click', (e) => { const th = e.target.closest('[data-sort]'); if (!th) return; const k = th.dataset.sort; st.sort = st.sort[0] === k ? [k, -st.sort[1]] : [k, ['addr', 'sig', 'agency', 'floor', 'mark', 'vsArea'].includes(k) ? 1 : -1]; renderAll(); });
+  $('tbody').addEventListener('click', (e) => {
+    const a = e.target.closest('[data-act]');
+    if (a && a.dataset.act === 'link') return;
+    if (a && a.dataset.act === 'cycle') { e.stopPropagation(); const cur = marks[a.dataset.id]?.s; const next = { undefined: 'fav', fav: 'maybe', maybe: 'no', no: null }[cur]; setMark(a.dataset.id, { s: next }); return; }
+    if (a && a.dataset.act === 'mark') { const cur = marks[a.dataset.id]?.s; setMark(a.dataset.id, { s: cur === a.dataset.s ? null : a.dataset.s }); return; }
+    if (e.target.closest('tr.detail')) return;
+    const tr = e.target.closest('tr.row'); if (!tr) return;
+    st.open = st.open === tr.dataset.id ? null : tr.dataset.id; renderAll();
+  });
+  const noteTimers = {};
+  $('tbody').addEventListener('input', (e) => {
+    const ta = e.target.closest('textarea.note'); if (!ta) return;
+    const id = ta.dataset.id; clearTimeout(noteTimers[id]);
+    $('ns-' + id).textContent = 'Sparar …';
+    noteTimers[id] = setTimeout(() => setMark(id, { note: ta.value }, true), 900);
+  });
+  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (st.tab === 'an') renderAll(); }, 150); });
+  $('fbox').open = window.innerWidth > 640;
+
+  // ---------- data (Apps Script-backend) ----------
+  const BACKEND = 'https://script.google.com/macros/s/AKfycbyUSjiNZaPtK18wNRvkNewgL9_fuCLGPV2sJ6MFZA_MiXyYwSxayMfedncJrBtP__JH/exec';
+  const who = () => $('who').value;
+  try { const w = localStorage.getItem('bj2:who'); if (w) $('who').value = w; } catch {}
+  $('who').addEventListener('change', () => { try { localStorage.setItem('bj2:who', who()); } catch {} });
+
+  async function getJSON(what) {
+    const r = await fetch(`${BACKEND}?what=${what}&t=${Date.now()}`);
+    if (!r.ok) throw new Error(String(r.status));
+    return r.json();
+  }
+  const writing = {};
+  async function setMark(id, patch, quiet) {
+    if (!who()) { const el = $('ns-' + id); if (el) el.textContent = 'Välj vem du är överst på sidan först'; $('who').focus(); return; }
+    const next = { ...(marks[id] || {}), ...patch, ts: Date.now(), by: who() };
+    marks[id] = next;
+    if (!quiet) renderAll();
+    if (writing[id]) await writing[id];
+    writing[id] = (async () => {
+      try {
+        const r = await fetch(BACKEND, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ kind: 'mark', id, user: who(), state: next.s || '', comment: next.note || '', ts: next.ts }) });
+        const j = await r.json().catch(() => ({}));
+        const el = $('ns-' + id); if (el) el.textContent = j.ok ? 'Sparat' : 'Kunde inte spara, försök igen';
+      } catch (err) {
+        const el = $('ns-' + id); if (el) el.textContent = 'Kunde inte spara – ingen kontakt med servern';
+      }
+    })();
+    await writing[id];
+    writing[id] = null;
+  }
+  function stampText() {
+    if (!meta) return 'Hämtar data …';
+    const runs = (meta.runs || []).filter((r) => r.source !== 'booli');
+    return `Uppdaterad <b>${esc(dt(meta.updated))}</b> · ${runs.length} hämtning${runs.length === 1 ? '' : 'ar'} sedan ${esc(d0(runs[0]?.at))}`;
+  }
+  async function loadAll() {
+    try {
+      const [state, mk] = await Promise.all([getJSON('state'), getJSON('marks')]);
+      meta = state.meta || {};
+      marks = mk || {};
+      rows = (state.rows || []).map(derive); addAreaRel(rows);
+      $('stamp').innerHTML = stampText();
+      $('foot').innerHTML = '<span>Källor: Hemnet och Booli. Sökning: Stockholm inom tullarna (Booli: innerstaden) · bostadsrätt · minst 2 rum · minst 60 m² · högst 12 Mkr · ej nyproduktion</span><span>Visningar som passerat sparas från och med första hämtningen. Objekt som redan låg ute då bedöms därför som troliga.</span><span>Karta © OpenStreetMap-bidragsgivare.</span>';
+      renderAreas(); renderAll();
+    } catch (err) {
+      $('stamp').textContent = 'Kunde inte hämta data. Ladda om sidan om en stund.';
+    }
+  }
+  async function refreshMarks() {
+    try {
+      const mk = await getJSON('marks');
+      const ta = document.activeElement && document.activeElement.matches('textarea.note');
+      marks = { ...mk, ...Object.fromEntries(Object.entries(marks).filter(([id, m]) => !mk[id] || (mk[id].ts || 0) < (m.ts || 0))) };
+      if (!ta) renderAll();
+    } catch {}
+  }
+  function boot() {
+    renderCols(); renderShowChips(); renderAll();
+    loadAll();
+    setInterval(() => { if (document.visibilityState === 'visible') refreshMarks(); }, 60000);
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
