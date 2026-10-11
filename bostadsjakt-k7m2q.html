@@ -144,6 +144,8 @@ thead th.stick { z-index: 3; }
 .p-bid { background: var(--warn-soft); color: var(--warn); }
 .p-show { background: var(--info-soft); color: var(--info); }
 .p-new { background: var(--good-soft); color: var(--good); }
+.p-recent { background: var(--sunken); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent-soft); }
+.nyb { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .03em; padding: 0 5px; border-radius: 3px; background: var(--good); color: #fff; margin-left: 6px; vertical-align: 1px; }
 .p-none { background: var(--sunken); color: var(--muted); }
 .p-end { background: var(--bad-soft); color: var(--bad); }
 .p-soon { background: var(--info-soft); color: var(--info); box-shadow: inset 0 0 0 1px var(--info); }
@@ -228,10 +230,15 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
 .ib span.bar.n { background: var(--accent); }
 .ib .v { min-width: 58px; text-align: right; }
 .areatbl tr.tot td { font-weight: 600; background: var(--sunken); }
+.delta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 14px; }
+.delta div { display: grid; }
+.delta b { font-size: 22px; font-weight: 600; }
+.delta span { font-size: 12px; color: var(--muted); }
 .foot { color: var(--faint); font-size: 12px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
 
 /* ---------- mobil: kort i stället för tabell ---------- */
 .cardbox { display: grid; gap: 8px; }
+.soonbar { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .cardbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .cardbar select { border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; background: var(--surface); font-size: 13px; }
 .cards { display: grid; gap: 8px; }
@@ -241,6 +248,11 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
 .co.m-maybe { border-left: 4px solid var(--info); }
 .co.m-no { opacity: .6; }
 .co.ended { opacity: .75; }
+.co-img { margin: -12px -12px 2px; border-radius: 8px 8px 0 0; overflow: hidden; aspect-ratio: 16 / 9; background: var(--sunken); }
+.co-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dimg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+.dimg img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 6px; background: var(--sunken); display: block; }
+.dimg img.plan { object-fit: contain; background: #fff; border: 1px solid var(--line); }
 .co-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
 .co-addr { min-width: 0; font-weight: 600; font-size: 15px; line-height: 1.25; }
 .co-addr a { text-decoration: none; }
@@ -344,6 +356,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
       <span class="pill p-neg weak">Trolig</span><span>inga kommande visningar och minst 10 dagar ute</span>
       <span><b>Mot område</b>: kr/m² jämfört med medianen för aktiva objekt i samma område</span>
     </div>
+    <div class="soonbar" id="soonbar" hidden></div>
     <div class="cardbox" id="cardbox" hidden>
       <div class="cardbar"><span id="mcount" class="sub"></span><label class="sub">Sortera <select id="msort">
         <option value="sig:1">Läge</option><option value="daysOut:1">Nyast</option><option value="nextShow:1">Nästa visning</option>
@@ -380,8 +393,9 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
         <div class="chart" id="ch-weekly"></div>
       </section>
       <section class="card">
-        <h2>Utbud vid varje hämtning</h2>
-        <p class="lede">Antal objekt som matchar sökningen. Kurvan växer för varje daglig körning.</p>
+        <h2>Sedan förra hämtningen</h2>
+        <div class="delta" id="delta"></div>
+        <p class="lede" style="margin-top:14px">Utbud per dag (senaste hämtningen varje dag). Kurvan växer för varje daglig körning.</p>
         <div class="chart" id="ch-supply"></div>
       </section>
     </div>
@@ -422,15 +436,18 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
 
   // ---------- område ----------
   const AREAS = [
-    ['Vasastan', /vasastan|sibirien|birkastan|odenplan|hagastaden|s:t eriksplan|sankt eriksplan|röda bergen|torsplan|rörstrand/],
+    ['Vasastan', /sveakvarteren|vasastan|sibirien|birkastan|odenplan|hagastaden|s:t eriksplan|sankt eriksplan|röda bergen|torsplan|rörstrand/],
     ['Södermalm', /södermalm|sofo|katarina|sofia|högalid|hornstull|zinken|tanto|\bmaria|reimersholme|södra station|långholmen/],
-    ['Kungsholmen', /kungsholmen|kungholmen|kristineberg|thorildsplan|fridhemsplan|hornsberg|stadshagen|marieberg/],
+    ['Kungsholmen', /kronobergs|kungsholmen|kungholmen|kristineberg|thorildsplan|fridhemsplan|hornsberg|stadshagen|marieberg/],
     ['Essingeöarna', /essingen/],
-    ['Östermalm', /östermalm|djurgård|ekhagen|lärkstaden|fältöversten/],
+    ['Östermalm', /hjorthagen|östermalm|djurgård|ekhagen|lärkstaden|fältöversten/],
     ['Gärdet', /gärdet/],
     ['Norrmalm', /norrmalm|city|klara/],
     ['Gamla stan', /gamla stan|riddarholmen|skeppsholmen/],
   ];
+  // Markering: Hemnet-id först, annars Booli-id (objekt som först bara fanns på Booli och sedan matchats)
+  const markOf = (r) => (r ? marks[r.id] || (r.b && r.b.id ? marks['b' + r.b.id] : undefined) : undefined);
+  const markById = (id) => markOf(rows.find((x) => x.id === id)) || marks[id];
   const areaOf = (s) => {
     const t = (s || '').toLowerCase();
     let best = null, at = 1e9;
@@ -446,19 +463,27 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
     const seen = uniqT(r.ohSeen);
     const past = seen.filter((s) => s < t - 3600);
     const upcoming = uniqT([...(r.oh || []), ...seen]).filter((s) => s >= t - 3600);
-    const active = r.status === 'Active';
-    const soon = r.status === 'Upcoming';
+    const isSoon = r.status === 'Upcoming';
+    // "Snart till salu" med visningsdatum räknas som aktivt (förhandsvisning)
+    const preview = isSoon && (upcoming.length > 0 || past.length > 0);
+    const active = r.status === 'Active' || preview;
+    const soon = isSoon && !preview;
     const lastShow = past.length ? Math.max(...past) : null;
+    const recent = lastShow && t - lastShow < 2 * DAY; // bud brukar komma dagarna efter visningen
     let sig, sigKey, sigRank;
     if (soon) {
-      sig = upcoming.length ? `<span class="pill p-soon">Förhandsvisning ${esc(dt(upcoming[0]).replace('.', ''))}</span>` : `<span class="pill p-soon">Snart till salu</span>`; sigKey = 'soon'; sigRank = upcoming.length ? 5.5 : 6;
+      sig = `<span class="pill p-soon">Snart till salu</span>`; sigKey = 'soon'; sigRank = 6;
     } else if (!active) {
-      const lbl = { Sold: 'Såld', DeactivatedBeforeOpenHouse: 'Såld före visning', Gone: 'Borttagen' }[r.status] || r.status;
+      const lbl = { Sold: 'Såld', DeactivatedBeforeOpenHouse: 'Såld före visning', Deactivated: 'Borttagen', Gone: 'Borttagen', Unknown: 'Okänd status' }[r.status] || r.status;
       sig = `<span class="pill p-end">${esc(lbl)}</span>`; sigKey = 'ended'; sigRank = 9;
     } else if (r.bid || r.bidOn) {
       sig = '<span class="pill p-bid">Budgivning</span>'; sigKey = 'bid'; sigRank = 5;
+    } else if (upcoming.length && preview) {
+      sig = `<span class="pill p-soon">Förhandsvisning ${esc(dt(upcoming[0]).replace('.', ''))}</span>`; sigKey = 'show'; sigRank = 3;
+    } else if (past.length && recent) {
+      sig = `<span class="pill p-recent">Visad ${esc(d0(lastShow))}, bud kan komma</span>`; sigKey = 'recent'; sigRank = 0.5;
     } else if (past.length) {
-      sig = '<span class="pill p-neg">Visad, inga bud</span>'; sigKey = 'neg'; sigRank = 0;
+      sig = `<span class="pill p-neg">${preview ? 'Förhandsvisad' : 'Visad'}, inga bud</span>`; sigKey = 'neg'; sigRank = 0;
     } else if (!upcoming.length && (r.days ?? 0) >= 10) {
       sig = '<span class="pill p-neg weak">Trolig: visad, inga bud</span>'; sigKey = 'neg?'; sigRank = 1;
     } else if (upcoming.length) {
@@ -485,10 +510,14 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
       pastN: past.length, upN: upcoming.length, nextShow: upcoming[0] || null, lastShow,
       sinceShow: lastShow ? (t - lastShow) / DAY : null,
       daysOut: r.pub ? Math.floor((((active || soon) ? t : (r.soldAt || r.endedAt || r.goneAt || t)) - r.pub) / DAY) : r.days,
+      pre: preview,
+      isNew: !!(newCut && r.first > newCut && (active || soon)),
+      img: r.img || r.b?.img || null,
       soldVs: r.soldPrice && r.price ? r.soldPrice / r.price - 1 : null,
       sig, sigKey, sigRank, vpd,
       pmove: pdiff ?? pchgPct,
       ended: !active && !soon,
+      areaLbl: /^stockholm\b/i.test(r.area || '') || !r.area ? null : r.area,
       soon,
       onlyB: r.src === 'booli',
       est: r.b?.est ?? null,
@@ -499,6 +528,15 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
     };
   }
   // kr/m² mot områdets median (aktiva objekt, hela datamängden)
+  function fixAreas(list) {
+    const known = list.filter((r) => r.areaN !== 'Övrigt' && r.lat);
+    list.filter((r) => r.areaN === 'Övrigt' && r.lat).forEach((r) => {
+      const near = known.map((k) => [((k.lat - r.lat) * 111) ** 2 + ((k.lng - r.lng) * 56) ** 2, k.areaN]).sort((a, b) => a[0] - b[0]).slice(0, 5).filter((x) => x[0] < 1.2 ** 2);
+      if (!near.length) return;
+      const votes = {}; near.forEach((x) => (votes[x[1]] = (votes[x[1]] || 0) + 1));
+      r.areaN = Object.entries(votes).sort((a, b) => b[1] - a[1])[0][0];
+    });
+  }
   function addAreaRel(list) {
     const by = {};
     list.filter((r) => !r.ended && !r.soon).forEach((r) => (by[r.areaN] ||= []).push(r.sqmPrice));
@@ -508,7 +546,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
 
   // ---------- kolumner ----------
   const COLS = [
-    { k: 'mark', h: '', cls: 'mk stick', sort: (r) => ({ fav: 0, maybe: 1, undefined: 2, no: 3 })[marks[r.id]?.s], fixed: true },
+    { k: 'mark', h: '', cls: 'mk stick', sort: (r) => ({ fav: 0, maybe: 1, undefined: 2, no: 3 })[markOf(r)?.s], fixed: true },
     { k: 'addr', h: 'Adress', cls: 'addr', sort: (r) => r.addr || '', fixed: true },
     { k: 'sig', h: 'Läge', sort: (r) => r.sigRank * 1000 - (r.sinceShow ?? 0) },
     { k: 'price', h: 'Pris Mkr', num: 1, sort: (r) => r.price },
@@ -534,8 +572,8 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
     { k: 'agency', h: 'Mäklare', sort: (r) => r.agency || '', off: 1 },
   ];
   const cell = {
-    mark: (r) => { const s = marks[r.id]?.s; return `<button class="mkb" data-act="cycle" data-id="${esc(r.id)}" data-s="${s || ''}" aria-label="Markering">${s === 'fav' ? '★' : s === 'maybe' ? '◐' : s === 'no' ? '✕' : '☆'}</button>`; },
-    addr: (r) => `<a href="${esc(r.hUrl || r.bUrl || '#')}" target="_blank" rel="noopener" data-act="link">${esc(r.addr || r.slug)}</a>${r.onlyB ? '<span class="src" title="Finns bara på Booli">Booli</span>' : ''}<small>${esc(r.area || r.areaN)}${r.brf ? ' · ' + esc(r.brf) : ''}</small>`,
+    mark: (r) => { const s = markOf(r)?.s; return `<button class="mkb" data-act="cycle" data-id="${esc(r.id)}" data-s="${s || ''}" aria-label="Markering">${s === 'fav' ? '★' : s === 'maybe' ? '◐' : s === 'no' ? '✕' : '☆'}</button>`; },
+    addr: (r) => `<a href="${esc(r.hUrl || r.bUrl || '#')}" target="_blank" rel="noopener" data-act="link">${esc(r.addr || r.slug)}</a>${r.isNew ? '<span class="nyb" title="Ny sedan förra hämtningen">Ny</span>' : ''}${r.onlyB ? '<span class="src" title="Finns bara på Booli">Booli</span>' : ''}<small>${esc(r.areaLbl || r.areaN)}${r.brf ? ' · ' + esc(r.brf) : ''}</small>`,
     sig: (r) => r.sig,
     price: (r) => mkr(r.price),
     soldPrice: (r) => r.soldPrice ? mkr(r.soldPrice) : '<span class="sub">ej publicerat</span>',
@@ -563,14 +601,14 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   // ---------- vyer ----------
   const VIEWS = [
     { k: 'active', h: 'Alla aktiva', f: (r) => !r.ended && !r.soon },
-    { k: 'todo', h: 'Att gå igenom', f: (r) => !r.ended && !r.soon && !marks[r.id]?.s, sort: ['daysOut', 1] },
+    { k: 'todo', h: 'Att gå igenom', f: (r) => !r.ended && !r.soon && !markOf(r)?.s, sort: ['daysOut', 1] },
     { k: 'neg', h: 'Visad, inga bud', f: (r) => r.isNeg, sort: ['sig', 1] },
     { k: 'show', h: 'Visning kommande', f: (r) => !r.ended && !r.soon && r.upN > 0, sort: ['nextShow', 1] },
-    { k: 'preview', h: 'Förhandsvisning', f: (r) => r.soon && r.upN > 0, sort: ['nextShow', 1] },
+    { k: 'preview', h: 'Förhandsvisning', f: (r) => r.pre, sort: ['nextShow', 1] },
     { k: 'good', h: 'Bra pris', f: (r) => !r.ended && !r.soon && ((r.vsEst != null && r.vsEst <= -0.12) || (r.vsArea != null && r.vsArea <= -0.15)), sort: ['vsEst', 1] },
     { k: 'new', h: 'Nya, 7 dagar', f: (r) => !r.ended && !r.soon && r.daysOut != null && r.daysOut <= 7, sort: ['daysOut', 1] },
     { k: 'bid', h: 'Budgivning', f: (r) => r.sigKey === 'bid' },
-    { k: 'soon', h: 'Snart till salu', f: (r) => r.soon, sort: ['daysOut', 1] },
+    { k: 'soon', h: 'Snart till salu', f: (r) => r.soon && (st.soonAll || r.ageB == null || r.ageB <= 14), sort: ['daysOut', 1] },
     { k: 'ended', h: 'Sålda och borttagna', f: (r) => r.ended, sort: ['soldVs', -1] },
   ];
 
@@ -582,6 +620,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   let canWrite = true;
   const st = Object.assign({ tab: 'list', view: 'active', sort: ['sig', 1], areas: [], show: { k: 'all', from: '', to: '' }, hidden: COLS.filter((c) => c.off).map((c) => c.k) }, store.get('state', {}));
   st.open = null;
+  st.soonAll = false;
   if (!VIEWS.some((v) => v.k === st.view)) st.view = 'active';
   if (!COLS.some((c) => c.k === st.sort[0])) st.sort = ['sig', 1];
   const FILTER_IDS = ['q', 'pmax', 'smin', 'rmin', 'fmax'];
@@ -644,7 +683,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
     const pmax = val('pmax'), smin = val('smin'), rmin = val('rmin'), fmax = val('fmax');
     const balc = $('balc').checked, hideNo = $('hideNo').checked, onlyFav = $('onlyFav').checked;
     return applyShowFilter(rows).filter((r) => {
-      const ms = marks[r.id]?.s;
+      const ms = markOf(r)?.s;
       if (onlyFav && ms !== 'fav') return false;
       if (hideNo && ms === 'no') return false;
       if (st.areas.length && !st.areas.includes(r.areaN)) return false;
@@ -723,7 +762,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   function detailInner(r) {
     const t = now();
     const shows = uniqT([...(r.ohSeen || []), ...(r.oh || [])]);
-    const m = marks[r.id] || {};
+    const m = markOf(r) || {};
     const hist = r.vh && r.vh.length ? `${r.vh.length} mätningar, ${esc(r.vh[0][0])} – ${esc(r.vh[r.vh.length - 1][0])}` : '';
     return `<div class="dgrid">
       <div><h4>Objekt</h4><dl class="kv">
@@ -747,7 +786,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
           ${r.ended ? `<dt>Avslutad</dt><dd>${esc(d0(r.soldAt || r.endedAt || r.goneAt))}</dd>` : ''}
           ${r.soldPrice ? `<dt>Slutpris</dt><dd>${kr(r.soldPrice)} kr (${r.soldVs > 0 ? '+' : ''}${(r.soldVs * 100).toFixed(0)} % mot utrop)</dd>` : ''}
         </dl></div>
-      <div><h4>Läge</h4>${r.lat ? `<div class="minimapL" id="mini-${esc(r.id)}"></div>` : '<span class="sub">Koordinater saknas</span>'}<h4 style="margin-top:12px">Sidvisningar på Hemnet</h4>${spark(r.vh)}<div class="sub">${hist}</div>
+      <div>${r.img || r.plan ? `<div class="dimg">${r.img ? `<img src="${esc(r.img)}" alt="Bild på objektet" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}${r.plan ? `<img class="plan" src="${esc(r.plan)}" alt="Planritning" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}</div>` : ''}<h4>Läge</h4>${r.lat ? `<div class="minimapL" id="mini-${esc(r.id)}"></div>` : '<span class="sub">Koordinater saknas</span>'}<h4 style="margin-top:12px">Sidvisningar på Hemnet</h4>${spark(r.vh)}<div class="sub">${hist}</div>
         ${r.b ? `<dl class="kv" style="margin-top:10px"><dt>Booli-värdering</dt><dd>${r.b.est ? kr(r.b.est) + ' kr' : 'saknas'}${r.b.estLo && r.b.estHi ? ` (${mkr(r.b.estLo)}–${mkr(r.b.estHi)} Mkr)` : ''}</dd>${r.vsEst != null ? `<dt>Utrop mot värdering</dt><dd>${r.vsEst > 0 ? '+' : ''}${(r.vsEst * 100).toFixed(0)} %</dd>` : ''}${r.b.views != null ? `<dt>Sidvisningar Booli</dt><dd>${kr(r.b.views)}</dd>` : ''}</dl>` : ''}
         <div class="links">${r.hUrl ? `<a href="${esc(r.hUrl)}" target="_blank" rel="noopener">Öppna på Hemnet</a>` : ''}${r.bUrl ? `<a href="${esc(r.bUrl)}" target="_blank" rel="noopener">Öppna på Booli</a>` : ''}${r.lat ? `<a href="https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}" target="_blank" rel="noopener">Karta</a>` : ''}</div></div>
       <div><h4>Vår bedömning</h4>
@@ -762,7 +801,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   const isMobile = () => window.matchMedia('(max-width: 760px)').matches;
   const pctS = (v) => `${v > 0 ? '+' : ''}${(v * 100).toFixed(0)} %`;
   function cardHtml(r) {
-    const m = marks[r.id]?.s;
+    const m = markOf(r)?.s;
     const show = r.showMatch ?? r.nextShow;
     const meta = [];
     if (show) meta.push(`Visning <b>${esc(dt(show))}</b>`);
@@ -773,8 +812,9 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
     if (r.soldPrice) meta.push(`Slutpris ${mkr(r.soldPrice)} Mkr (${pctS(r.soldVs)})`);
     const btn = (s, l, aria) => `<button type="button" class="cb cb-${s}" data-act="mark" data-id="${esc(r.id)}" data-s="${s}" aria-pressed="${m === s}" aria-label="${aria}">${l}</button>`;
     return `<article class="co${st.open === r.id ? ' open' : ''}${r.ended ? ' ended' : ''}${m ? ' m-' + m : ''}" data-id="${esc(r.id)}">
-      <div class="co-top"><div class="co-addr"><a href="${esc(r.hUrl || r.bUrl || '#')}" target="_blank" rel="noopener" data-act="link">${esc(r.addr || r.slug)}</a>${r.onlyB ? '<span class="src">Booli</span>' : ''}<small>${esc(r.area || r.areaN)}</small></div>${r.sig}</div>
-      <div class="co-nums"><b>${mkr(r.price)} Mkr</b><span>${r.sqm == null ? '–' : String(r.sqm).replace('.', ',')} m²</span><span>${r.rooms == null ? '–' : String(r.rooms).replace('.', ',')} rum</span><span>${kr(r.fee)} kr/mån</span><span>${kr(r.sqmPrice)} kr/m²</span></div>
+      ${r.img ? `<div class="co-img"><img src="${esc(r.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.remove()"></div>` : ''}
+      <div class="co-top"><div class="co-addr"><a href="${esc(r.hUrl || r.bUrl || '#')}" target="_blank" rel="noopener" data-act="link">${esc(r.addr || r.slug)}</a>${r.isNew ? '<span class="nyb">Ny</span>' : ''}${r.onlyB ? '<span class="src">Booli</span>' : ''}<small>${esc(r.areaLbl || r.areaN)}${r.floor ? ' · vån ' + esc(String(r.floor).replace(/^vån(ing)?\s*/i, '')) : ''}</small></div>${r.sig}</div>
+      <div class="co-nums"><b>${r.price ? mkr(r.price) + ' Mkr' : 'Pris ej satt'}</b><span>${r.sqm == null ? '–' : String(r.sqm).replace('.', ',')} m²</span><span>${r.rooms == null ? '–' : String(r.rooms).replace('.', ',')} rum</span><span>${kr(r.fee)} kr/mån</span>${r.sqmPrice ? `<span>${kr(r.sqmPrice)} kr/m²</span>` : ''}</div>
       <div class="co-meta">${meta.join('<i>·</i>')}</div>
       <div class="co-acts">${btn('fav', '★ Intressant', 'Intressant')}${btn('maybe', '? Kanske', 'Kanske')}${btn('no', '✕ Nej', 'Inte intressant')}<button type="button" class="cb cb-more" data-act="open" data-id="${esc(r.id)}" aria-expanded="${st.open === r.id}" aria-label="${st.open === r.id ? 'Stäng detaljer' : 'Visa detaljer'}">${st.open === r.id ? '▴' : '▾'}</button></div>
       ${st.open === r.id ? `<div class="co-detail">${detailInner(r)}</div>` : ''}
@@ -785,6 +825,13 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
     const v = VIEWS.find((x) => x.k === st.view) || VIEWS[0];
     const list = sorted(b.filter(v.f));
     const mob = isMobile();
+    if (st.view === 'soon') {
+      const old = b.filter((r) => r.soon && r.ageB != null && r.ageB > 14).length;
+      $('soonbar').hidden = false;
+      $('soonbar').innerHTML = st.soonAll ? `Visar alla, även ${old} som legat som "snart till salu" i mer än två veckor. <button type="button" class="btn" id="soonToggle">Visa bara nya</button>`
+        : `Visar de som blev "snart till salu" de senaste två veckorna. Objekt med visningsdatum finns bland de aktiva. <button type="button" class="btn" id="soonToggle">Visa även äldre (${old})</button>`;
+      $('soonToggle').onclick = () => { st.soonAll = !st.soonAll; renderAll(); };
+    } else $('soonbar').hidden = true;
     $('tablebox').hidden = mob; $('cardbox').hidden = !mob;
     if (mob) {
       $('msort').value = st.sort[0] + ':' + st.sort[1];
@@ -916,7 +963,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
     const sorted = pts.slice().sort((a, b) => order(a) - order(b));
     sorted.forEach((r, i) => {
       const c = r.isNeg ? 'var(--c-neg)' : r.sigKey === 'bid' ? 'var(--c-bid)' : 'var(--c-rest)';
-      const mk = marks[r.id]?.s === 'fav' || marks[r.id]?.s === 'maybe';
+      const mk = markOf(r)?.s === 'fav' || markOf(r)?.s === 'maybe';
       const cx = X(r.daysOut), cy = Y(r.sqmPrice);
       s += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${mk ? 6 : 4.5}" fill="${c}" stroke="${mk ? 'var(--fg)' : 'var(--surface)'}" stroke-width="2"/>`;
       s += `<circle class="hit" data-i="${i}" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="10"/>`;
@@ -935,7 +982,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
     const n = Math.max(1, Math.ceil((hi - lo + 1e-9) / opts.step));
     const bins = Array.from({ length: n }, (_, i) => ({ a: lo + i * opts.step, b: lo + (i + 1) * opts.step, c: 0 }));
     vals.forEach((v) => { bins[Math.min(n - 1, Math.floor((v - lo) / opts.step))].c++; });
-    const marked = list.filter((r) => (marks[r.id]?.s === 'fav' || marks[r.id]?.s === 'maybe') && r[key] != null).map((r) => ({ i: Math.min(n - 1, Math.floor((Math.min(cap, r[key]) - lo) / opts.step)) }));
+    const marked = list.filter((r) => (markOf(r)?.s === 'fav' || markOf(r)?.s === 'maybe') && r[key] != null).map((r) => ({ i: Math.min(n - 1, Math.floor((Math.min(cap, r[key]) - lo) / opts.step)) }));
     columns(id, bins.map((b, i) => {
       const last = i === n - 1 && hi >= cap;
       return { label: last ? opts.lab(b.a) + '+' : opts.lab(b.a), v: b.c, tip: `<b>${last ? opts.fmt(b.a) + ' eller mer' : opts.fmt(b.a) + '–' + opts.fmt(b.b)}</b><br>${b.c} objekt` };
@@ -989,7 +1036,20 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
     if (keys.length) for (let k = keys[0]; k <= keys[keys.length - 1]; k += 7 * DAY) weeks.push(k);
     columns('ch-weekly', weeks.slice(-16).map((k) => ({ label: 'v' + isoWeek(k), v: wk[k]?.n || 0, tip: `<b>Vecka ${isoWeek(k)}</b>, från ${esc(fmtDay.format(new Date(k * 1000)))}<br>${wk[k]?.n || 0} nya objekt${wk[k]?.ended ? `<br><span class="t2">${wk[k].ended} redan sålda eller borttagna</span>` : ''}` })), { aria: 'Nya objekt per vecka' });
 
-    const runs = (meta?.runs || []).filter((r) => r.total != null);
+    const byDay = {};
+    (meta?.runs || []).filter((r) => r.total != null).forEach((r) => { byDay[dayKey(r.at)] = r; });
+    const runs = Object.values(byDay).sort((a, b) => a.at - b.at);
+    if (newCut) {
+      const all = rows;
+      const nNew = all.filter((r) => r.isNew && !r.soon).length, nSoon = all.filter((r) => r.isNew && r.soon).length;
+      const endedNow = all.filter((r) => r.ended && (r.soldAt || r.endedAt || r.goneAt || 0) > newCut);
+      const sold = endedNow.filter((r) => r.status !== 'Gone' && r.status !== 'Deactivated').length;
+      const bidNew = all.filter((r) => !r.ended && r.bidAt && r.bidAt > newCut).length;
+      const shown = all.filter((r) => (r.ohSeen || []).some((x) => x > newCut && x < now())).length;
+      const box = (n, l) => `<div><b>${n}</b><span>${l}</span></div>`;
+      $('delta').innerHTML = box(nNew, 'nya till salu') + box(nSoon, 'nya snart till salu') + box(bidNew, 'gick till budgivning') + box(sold, 'sålda') + box(endedNow.length - sold, 'borttagna') + box(shown, 'hade visning') +
+        `<p class="sub" style="grid-column:1/-1;margin:0">Jämfört med hämtningen ${esc(dt(newCut - 1800))}.</p>`;
+    } else $('delta').innerHTML = '<p class="sub" style="margin:0">Visas när det finns hämtningar från minst två olika dagar.</p>';
     line('ch-supply', runs.map((r) => ({ x: r.at, v: r.total, tip: `<b>${esc(dt(r.at))}</b><br>${r.total} objekt i sökningen` })), { aria: 'Utbud vid varje hämtning' });
 
     hist('ch-h-sqm', act, 'sqmPrice', { step: 10000, lab: (a) => `${a / 1000}k`, fmt: (a) => kr(a), aria: 'Fördelning kronor per kvadratmeter' });
@@ -1021,8 +1081,8 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   const calLink = (r, s) => `<a class="btn-cal" href="${esc(calUrl(r, s))}" target="_blank" rel="noopener" title="Öppnar Google Kalender med visningen, Elsa och Jonathan bjuds in">＋ Kalender</a>`;
 
   // ---------- karta ----------
-  const colorOf = (r) => r.isNeg ? '#00897b' : r.sigKey === 'bid' ? '#c47f17' : r.soon ? '#3b4f7a' : '#8f9a97';
-  const isMarked = (r) => marks[r.id]?.s === 'fav' || marks[r.id]?.s === 'maybe';
+  const colorOf = (r) => r.isNeg ? '#00897b' : r.sigKey === 'bid' ? '#c47f17' : (r.soon || r.pre) ? '#3b4f7a' : '#8f9a97';
+  const isMarked = (r) => markOf(r)?.s === 'fav' || markOf(r)?.s === 'maybe';
   let lmap = null, lmapLayer = null, lmapFitted = false, mini = null;
   function popupHtml(r) {
     const nx = r.nextShow;
@@ -1126,7 +1186,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
     clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 5000);
   }
   function markFromUi(id, s) {
-    const prev = marks[id]?.s || null;
+    const prev = markById(id)?.s || null;
     const next = prev === s ? null : s;
     setMark(id, { s: next });
     if (isMobile() && $('ns-' + id) == null) {
@@ -1137,7 +1197,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   function onListClick(e) {
     const a = e.target.closest('[data-act]');
     if (a && a.dataset.act === 'link') return;
-    if (a && a.dataset.act === 'cycle') { e.stopPropagation(); const cur = marks[a.dataset.id]?.s; const next = { undefined: 'fav', fav: 'maybe', maybe: 'no', no: null }[cur]; setMark(a.dataset.id, { s: next }); return; }
+    if (a && a.dataset.act === 'cycle') { e.stopPropagation(); const cur = markById(a.dataset.id)?.s; const next = { undefined: 'fav', fav: 'maybe', maybe: 'no', no: null }[cur]; setMark(a.dataset.id, { s: next }); return; }
     if (a && a.dataset.act === 'mark') { markFromUi(a.dataset.id, a.dataset.s); return; }
     if (e.target.closest('tr.detail, .co-detail')) return;
     if (e.target.closest('a, button:not([data-act="open"]), select, textarea, input')) return;
@@ -1183,7 +1243,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   }
   const writing = {};
   async function setMark(id, patch, quiet) {
-    const next = { ...(marks[id] || {}), ...patch, ts: Date.now(), by: who() };
+    const next = { ...(markById(id) || {}), ...patch, ts: Date.now(), by: who() };
     marks[id] = next;
     if (!quiet) renderAll();
     if (writing[id]) await writing[id];
@@ -1205,21 +1265,44 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
     if (isMobile()) return `Uppdaterad <b>${esc(dt(meta.updated))}</b>`;
     return `Uppdaterad <b>${esc(dt(meta.updated))}</b> · ${runs.length} hämtning${runs.length === 1 ? '' : 'ar'} sedan ${esc(d0(runs[0]?.at))}`;
   }
+  // Slå ihop markeringar: den senast ändrade vinner
+  const mergeMarks = (a, b) => { const out = { ...(a || {}) }; Object.entries(b || {}).forEach(([id, m]) => { if (!out[id] || (m.ts || 0) > (out[id].ts || 0)) out[id] = m; }); return out; };
+  let newCut = null;
+  function cutoffFrom(m) {
+    const ats = (m?.runs || []).map((x) => x.at).sort((a, b) => a - b);
+    if (!ats.length) return null;
+    const latest = ats[ats.length - 1];
+    const before = ats.filter((x) => x < latest - 6 * 3600);
+    return before.length ? before[before.length - 1] + 1800 : null;
+  }
+  function applyState(state) {
+    meta = state.meta || {};
+    newCut = cutoffFrom(meta);
+    rows = (state.rows || []).map(derive); fixAreas(rows); addAreaRel(rows);
+  }
+  const CACHE_KEY = 'bj2:cache';
+  function readCache() { try { const c = localStorage.getItem(CACHE_KEY); return c ? JSON.parse(c) : null; } catch { return null; } }
+  function writeCache(state) { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ state, marks, at: Date.now() })); } catch {} }
+  function renderLoaded(fromCache) {
+    $('stamp').innerHTML = stampText() + (fromCache ? ' · <span class="sub">uppdaterar …</span>' : '');
+    $('foot').innerHTML = '<span>Källor: Hemnet och Booli. Sökning: Stockholm inom tullarna (Booli: innerstaden) · bostadsrätt · minst 2 rum · minst 60 m² · högst 12 Mkr · ej nyproduktion</span><span>Visningar som passerat sparas från och med första hämtningen. Objekt som redan låg ute då bedöms därför som troliga.</span><span>Karta © OpenStreetMap-bidragsgivare.</span>';
+    renderAreas(); renderAll();
+  }
   async function loadAll() {
+    const cached = !rows.length ? readCache() : null;
+    if (cached && cached.state) { marks = mergeMarks(cached.marks, marks); applyState(cached.state); renderLoaded(true); }
     // Objekten visas så snart de kommit; markeringarna fylls på när de kommer (de får inte blockera listan).
-    const mkP = getJSON('marks').then((mk) => { marks = { ...(mk || {}), ...marks }; if (rows.length) renderAll(); return true; })
+    const mkP = getJSON('marks').then((mk) => { marks = mergeMarks(mk, marks); if (rows.length) renderAll(); return true; })
       .catch((err) => { console.error('bostadsjakt: markeringar', err); return false; });
     try {
       const state = await getJSON('state');
-      meta = state.meta || {};
-      rows = (state.rows || []).map(derive); addAreaRel(rows);
-      $('stamp').innerHTML = stampText();
-      $('foot').innerHTML = '<span>Källor: Hemnet och Booli. Sökning: Stockholm inom tullarna (Booli: innerstaden) · bostadsrätt · minst 2 rum · minst 60 m² · högst 12 Mkr · ej nyproduktion</span><span>Visningar som passerat sparas från och med första hämtningen. Objekt som redan låg ute då bedöms därför som troliga.</span><span>Karta © OpenStreetMap-bidragsgivare.</span>';
-      renderAreas(); renderAll();
+      applyState(state);
+      renderLoaded(false);
+      mkP.then((ok) => { if (ok) writeCache(state); });
       if (!(await mkP)) { $('stamp').innerHTML = stampText() + ' · markeringar laddas om strax'; setTimeout(refreshMarks, 5000); }
     } catch (err) {
       console.error('bostadsjakt: laddning misslyckades', err);
-      $('stamp').innerHTML = 'Kunde inte hämta data. <a href="#" id="retry">Försök igen</a>';
+      $('stamp').innerHTML = (cached ? `Visar sparad kopia (${esc(dt(Math.round(cached.at / 1000)))}). ` : 'Kunde inte hämta data. ') + '<a href="#" id="retry">Försök igen</a>';
       const rt = $('retry'); if (rt) rt.onclick = (e) => { e.preventDefault(); $('stamp').textContent = 'Hämtar data …'; loadAll(); };
     }
   }
