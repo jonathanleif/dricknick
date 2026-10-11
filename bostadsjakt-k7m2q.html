@@ -56,8 +56,6 @@ header.top { display: flex; flex-wrap: wrap; align-items: center; justify-conten
 .tabs button[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(20,30,28,.12); }
 .stamp { color: var(--muted); font-size: 13px; }
 .hdr-right { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; }
-.who { font-size: 13px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
-.who select { border: 1px solid var(--line); border-radius: 4px; padding: 3px 6px; background: var(--surface); }
 #lmap { height: max(460px, calc(100vh - 300px)); border: 1px solid var(--line); border-radius: var(--r); }
 .minimapL { height: 220px; border: 1px solid var(--line); border-radius: 6px; margin-top: 10px; }
 .leaflet-popup-content { font-family: var(--font-ui); font-size: 13px; margin: 10px 12px; }
@@ -232,6 +230,56 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
 .areatbl tr.tot td { font-weight: 600; background: var(--sunken); }
 .foot { color: var(--faint); font-size: 12px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
 
+/* ---------- mobil: kort i stället för tabell ---------- */
+.cardbox { display: grid; gap: 8px; }
+.cardbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.cardbar select { border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; background: var(--surface); font-size: 13px; }
+.cards { display: grid; gap: 8px; }
+.co { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 12px 10px; display: grid; gap: 6px; cursor: pointer; }
+.co.open { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.co.m-fav { border-left: 4px solid var(--warn); }
+.co.m-maybe { border-left: 4px solid var(--info); }
+.co.m-no { opacity: .6; }
+.co.ended { opacity: .75; }
+.co-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.co-addr { min-width: 0; font-weight: 600; font-size: 15px; line-height: 1.25; }
+.co-addr a { text-decoration: none; }
+.co-addr small { display: block; font-weight: 400; color: var(--muted); font-size: 12.5px; }
+.co-top .pill { flex: none; font-size: 11px; white-space: normal; text-align: right; }
+.co-nums { display: flex; flex-wrap: wrap; gap: 2px 12px; font-family: var(--font-num); font-size: 13px; font-variant-numeric: tabular-nums; }
+.co-nums b { font-weight: 600; }
+.co-meta { font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 2px 6px; }
+.co-meta i { font-style: normal; color: var(--faint); }
+.co-meta b { color: var(--fg); font-weight: 600; }
+.co-acts { display: grid; grid-template-columns: 1.25fr 1fr 1fr 44px; gap: 6px; margin-top: 2px; }
+.cb { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; min-height: 42px; padding: 6px 4px; font-weight: 600; font-size: 13.5px; cursor: pointer; touch-action: manipulation; white-space: nowrap; }
+.cb-fav[aria-pressed="true"] { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); }
+.cb-maybe[aria-pressed="true"] { background: var(--info-soft); border-color: var(--info); color: var(--info); }
+.cb-no[aria-pressed="true"] { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+.cb-more { font-weight: 500; color: var(--muted); font-size: 16px; }
+.co-detail { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 12px; cursor: default; }
+.co-detail .dgrid { grid-template-columns: 1fr; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 1000; background: var(--fg); color: #fff; border-radius: 8px; padding: 10px 14px; font-size: 14px; display: flex; gap: 12px; align-items: center; box-shadow: 0 8px 24px rgba(0,0,0,.25); max-width: calc(100% - 32px); }
+.toast b { font-weight: 600; }
+.toast button { border: 0; background: none; color: #9fe3d8; font-weight: 700; cursor: pointer; padding: 4px 2px; }
+@media (max-width: 760px) {
+  .tiles, #legend, #colwrap { display: none !important; }
+  .wrap { gap: 10px; padding-block: 12px 72px; }
+  .views { margin-inline: -16px; padding-inline: 16px; scrollbar-width: none; }
+  .views::-webkit-scrollbar { display: none; }
+  .showchips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .filters .f input[type="number"], .filters .f select { width: 100%; }
+  .filters .f { flex: 1 1 calc(50% - 7px); }
+  .filters .f:first-child { flex-basis: 100%; }
+  .f input, .f select { font-size: 16px; padding: 7px 8px; }
+  .hdr-right { width: 100%; justify-content: space-between; flex-wrap: nowrap; gap: 10px; }
+  header.top { gap: 8px; }
+  .brand { gap: 8px 14px; align-items: center; }
+  .brand h1 span { display: none; }
+  .tabs button { padding: 5px 12px; }
+  .stamp { font-size: 12px; text-align: right; }
+  .showchips button, .areas button { white-space: nowrap; flex: none; }
+}
 @media (max-width: 640px) {
   .f input[type="search"] { width: 100%; }
   .f-actions { margin-left: 0; }
@@ -256,7 +304,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
         <button type="button" role="tab" id="tab-an" aria-selected="false" aria-controls="pane-an">Analys</button>
       </div>
     </div>
-    <div class="hdr-right"><label class="who" title="Används bara för markeringar (favorit/kanske/nej och anteckningar), så att ni ser vem som markerat vad">Jag är <select id="who"><option value="">välj</option><option>Jonathan</option><option>Elsa</option></select></label><div class="stamp" id="stamp">Hämtar data …</div></div>
+    <div class="hdr-right"><div class="stamp" id="stamp">Hämtar data …</div></div>
   </header>
 
   <section class="tiles" id="tiles" aria-label="Nyckeltal"></section>
@@ -264,16 +312,15 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   <details class="fbox" id="fbox"><summary>Filter <span class="sub" id="fsum"></span></summary>
   <section class="filters" aria-label="Filter">
     <div class="f"><label for="q">Sök</label><input id="q" type="search" placeholder="Adress, brf, mäklare"></div>
-    <div class="f"><span class="lab">Pris, Mkr</span><div class="range"><input id="pmin" type="number" step="0.25" min="0" placeholder="från" aria-label="Pris från"> – <input id="pmax" type="number" step="0.25" min="0" placeholder="till" aria-label="Pris till"></div></div>
-    <div class="f"><span class="lab">Boarea, m²</span><div class="range"><input id="smin" type="number" min="0" placeholder="från" aria-label="Boarea från"> – <input id="smax" type="number" min="0" placeholder="till" aria-label="Boarea till"></div></div>
-    <div class="f"><label for="rmin">Rum minst</label><input id="rmin" type="number" min="1" step="0.5" placeholder="2"></div>
-    <div class="f"><label for="fmax">Avgift max</label><input id="fmax" type="number" min="0" step="250" placeholder="kr/mån"></div>
-    <div class="f"><label for="dmin">Dagar ute minst</label><input id="dmin" type="number" min="0" placeholder="0"></div>
-    <div class="f"><span class="lab">Område</span><div class="areas" id="areas"></div></div>
+    <div class="f"><label for="pmax">Pris max, Mkr</label><input id="pmax" type="number" step="0.25" min="0" placeholder="12" inputmode="decimal"></div>
+    <div class="f"><label for="smin">Boarea minst, m²</label><input id="smin" type="number" min="0" placeholder="60" inputmode="numeric"></div>
+    <div class="f"><label for="rmin">Rum minst</label><select id="rmin"><option value="">alla</option><option value="2.5">2,5</option><option value="3">3</option><option value="4">4</option></select></div>
+    <div class="f"><label for="fmax">Avgift max, kr/mån</label><input id="fmax" type="number" min="0" step="250" placeholder="5000" inputmode="numeric"></div>
+    <div class="f" style="flex-basis:100%"><span class="lab">Område</span><div class="areas" id="areas"></div></div>
     <div class="f" style="flex-basis:100%"><span class="lab">Visning</span><div class="showchips" id="showchips"></div></div>
     <label class="chk"><input id="balc" type="checkbox"> Balkong</label>
-    <label class="chk"><input id="elev" type="checkbox"> Hiss</label>
     <label class="chk"><input id="hideNo" type="checkbox" checked> Dölj nej-markerade</label>
+    <label class="chk"><input id="onlyFav" type="checkbox"> Bara intressanta ★</label>
     <div class="f-actions">
       <button class="btn" id="reset" type="button">Rensa filter</button>
       <div class="colmenu" id="colwrap">
@@ -292,12 +339,19 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   </div>
 
   <div id="pane-list" role="tabpanel" aria-labelledby="tab-list" style="display:grid;gap:14px">
-    <div class="legend">
+    <div class="legend" id="legend">
       <span class="pill p-neg">Visad, inga bud</span><span>visningen har passerat och ingen budgivning har startat</span>
       <span class="pill p-neg weak">Trolig</span><span>inga kommande visningar och minst 10 dagar ute</span>
       <span><b>Mot område</b>: kr/m² jämfört med medianen för aktiva objekt i samma område</span>
     </div>
-    <div class="tablebox">
+    <div class="cardbox" id="cardbox" hidden>
+      <div class="cardbar"><span id="mcount" class="sub"></span><label class="sub">Sortera <select id="msort">
+        <option value="sig:1">Läge</option><option value="daysOut:1">Nyast</option><option value="nextShow:1">Nästa visning</option>
+        <option value="price:1">Pris, lägst</option><option value="sqmPrice:1">kr/m², lägst</option><option value="vsArea:1">Mot område</option><option value="vsEst:1">Mot Booli-värdering</option><option value="sqm:-1">Störst</option>
+      </select></label></div>
+      <div class="cards" id="cards"></div>
+    </div>
+    <div class="tablebox" id="tablebox">
       <table id="tbl">
         <thead><tr id="thead"></tr></thead>
         <tbody id="tbody"><tr><td class="empty" colspan="20"><b>Objekten laddas</b>Listan fylls från senaste Hemnet-hämtningen.</td></tr></tbody>
@@ -344,6 +398,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   </div>
 
   <div class="foot" id="foot"></div>
+  <div class="toast" id="toast" hidden></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -384,11 +439,13 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   };
 
   // ---------- härledda fält ----------
+  // Samma visning kan komma från både Hemnet och Booli med några sekunders skillnad: slå ihop inom 30 min.
+  const uniqT = (arr) => { const out = []; (arr || []).slice().sort((a, b) => a - b).forEach((t) => { if (!out.length || t - out[out.length - 1] > 1800) out.push(t); }); return out; };
   function derive(r) {
     const t = now();
-    const seen = r.ohSeen || [];
+    const seen = uniqT(r.ohSeen);
     const past = seen.filter((s) => s < t - 3600);
-    const upcoming = [...new Set([...(r.oh || []), ...seen])].filter((s) => s >= t - 3600).sort((a, b) => a - b);
+    const upcoming = uniqT([...(r.oh || []), ...seen]).filter((s) => s >= t - 3600);
     const active = r.status === 'Active';
     const soon = r.status === 'Upcoming';
     const lastShow = past.length ? Math.max(...past) : null;
@@ -505,17 +562,14 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
 
   // ---------- vyer ----------
   const VIEWS = [
-    { k: 'active', h: 'Alla aktiva', f: (r) => !r.ended && !r.soon },
+    { k: 'todo', h: 'Att gå igenom', f: (r) => !r.ended && !r.soon && !marks[r.id]?.s, sort: ['daysOut', 1] },
     { k: 'neg', h: 'Visad, inga bud', f: (r) => r.isNeg, sort: ['sig', 1] },
-    { k: 'underEst', h: 'Under Boolis värdering', f: (r) => !r.ended && !r.soon && r.vsEst != null && r.vsEst <= -0.05, sort: ['vsEst', 1] },
-    { k: 'cheap', h: 'Billigt för området', f: (r) => !r.ended && r.vsArea != null && r.vsArea <= -0.1, sort: ['vsArea', 1] },
-    { k: 'price', h: 'Prisändrade', f: (r) => !r.ended && r.pmove != null && r.pmove !== 0, sort: ['pmove', 1] },
-    { k: 'new', h: 'Nya, 3 dagar', f: (r) => !r.ended && !r.soon && r.daysOut != null && r.daysOut <= 3, sort: ['daysOut', 1] },
     { k: 'show', h: 'Visning kommande', f: (r) => !r.ended && r.upN > 0, sort: ['nextShow', 1] },
-    { k: 'soon', h: 'Snart till salu', f: (r) => r.soon, sort: ['daysOut', 1] },
-    { k: 'onlyB', h: 'Bara på Booli', f: (r) => r.onlyB && !r.ended && !r.soon },
+    { k: 'good', h: 'Bra pris', f: (r) => !r.ended && !r.soon && ((r.vsEst != null && r.vsEst <= -0.12) || (r.vsArea != null && r.vsArea <= -0.15)), sort: ['vsEst', 1] },
+    { k: 'new', h: 'Nya, 7 dagar', f: (r) => !r.ended && !r.soon && r.daysOut != null && r.daysOut <= 7, sort: ['daysOut', 1] },
+    { k: 'active', h: 'Alla aktiva', f: (r) => !r.ended && !r.soon },
     { k: 'bid', h: 'Budgivning', f: (r) => r.sigKey === 'bid' },
-    { k: 'fav', h: 'Markerade', f: (r) => marks[r.id]?.s === 'fav' || marks[r.id]?.s === 'maybe' },
+    { k: 'soon', h: 'Snart till salu', f: (r) => r.soon, sort: ['daysOut', 1] },
     { k: 'ended', h: 'Sålda och borttagna', f: (r) => r.ended, sort: ['soldVs', -1] },
   ];
 
@@ -525,11 +579,12 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   let meta = null;
   let marks = {};
   let canWrite = true;
-  const st = Object.assign({ tab: 'list', view: 'active', sort: ['sig', 1], areas: [], show: { k: 'all', from: '', to: '' }, hidden: COLS.filter((c) => c.off).map((c) => c.k) }, store.get('state', {}));
+  const st = Object.assign({ tab: 'list', view: 'todo', sort: ['sig', 1], areas: [], show: { k: 'all', from: '', to: '' }, hidden: COLS.filter((c) => c.off).map((c) => c.k) }, store.get('state', {}));
   st.open = null;
+  if (!VIEWS.some((v) => v.k === st.view)) st.view = 'todo';
   if (!COLS.some((c) => c.k === st.sort[0])) st.sort = ['sig', 1];
-  const FILTER_IDS = ['q', 'pmin', 'pmax', 'smin', 'smax', 'rmin', 'fmax', 'dmin'];
-  const CHK_IDS = ['balc', 'elev', 'hideNo'];
+  const FILTER_IDS = ['q', 'pmax', 'smin', 'rmin', 'fmax'];
+  const CHK_IDS = ['balc', 'hideNo', 'onlyFav'];
   const $ = (id) => document.getElementById(id);
   const savedF = store.get('filters', {});
   FILTER_IDS.forEach((id) => { if (savedF[id] != null) $(id).value = savedF[id]; });
@@ -575,7 +630,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
     list.forEach((r) => { r.showMatch = null; });
     if (!rg) return list;
     return list.filter((r) => {
-      const all = [...new Set([...(r.oh || []), ...(r.ohSeen || [])])].filter((s) => s >= t - 3600).sort((a, b) => a - b);
+      const all = uniqT([...(r.oh || []), ...(r.ohSeen || [])]).filter((s) => s >= t - 3600);
       const hit = all.find((s) => { const k = dayKey(s); return k >= rg[0] && k <= rg[1]; });
       if (hit) r.showMatch = hit;
       return !!hit;
@@ -585,21 +640,19 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   // filter utan vy: används av nyckeltal och analys
   function base() {
     const q = $('q').value.trim().toLowerCase();
-    const pmin = val('pmin'), pmax = val('pmax'), smin = val('smin'), smax = val('smax'), rmin = val('rmin'), fmax = val('fmax'), dmin = val('dmin');
-    const balc = $('balc').checked, elev = $('elev').checked, hideNo = $('hideNo').checked;
+    const pmax = val('pmax'), smin = val('smin'), rmin = val('rmin'), fmax = val('fmax');
+    const balc = $('balc').checked, hideNo = $('hideNo').checked, onlyFav = $('onlyFav').checked;
     return applyShowFilter(rows).filter((r) => {
-      if (hideNo && marks[r.id]?.s === 'no' && !(st.tab === 'list' && st.view === 'fav')) return false;
+      const ms = marks[r.id]?.s;
+      if (onlyFav && ms !== 'fav') return false;
+      if (hideNo && ms === 'no') return false;
       if (st.areas.length && !st.areas.includes(r.areaN)) return false;
       if (q && !`${r.addr} ${r.area} ${r.brf} ${r.agency}`.toLowerCase().includes(q)) return false;
-      if (pmin != null && (r.price ?? 0) < pmin * 1e6) return false;
       if (pmax != null && (r.price ?? 1e12) > pmax * 1e6) return false;
       if (smin != null && (r.sqm ?? 0) < smin) return false;
-      if (smax != null && (r.sqm ?? 1e9) > smax) return false;
       if (rmin != null && (r.rooms ?? 0) < rmin) return false;
       if (fmax != null && (r.fee ?? 1e9) > fmax) return false;
-      if (dmin != null && (r.daysOut ?? 0) < dmin) return false;
       if (balc && r.balc !== true) return false;
-      if (elev && r.elev !== true) return false;
       return true;
     });
   }
@@ -665,12 +718,13 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
     const last = pts[pts.length - 1];
     return `<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="Sidvisningar över tid"><polygon points="${P},${H - P} ${line} ${W - P},${H - P}" fill="var(--c-neg)" fill-opacity=".1"/><polyline points="${line}" fill="none" stroke="var(--c-neg)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="4" fill="var(--c-neg)" stroke="var(--surface)" stroke-width="2"/></svg>`;
   }
-  function detailRow(r, span) {
+  function detailRow(r, span) { return `<tr class="detail"><td colspan="${span}">${detailInner(r)}</td></tr>`; }
+  function detailInner(r) {
     const t = now();
-    const shows = (r.ohSeen || []).slice().sort((a, b) => a - b);
+    const shows = uniqT([...(r.ohSeen || []), ...(r.oh || [])]);
     const m = marks[r.id] || {};
     const hist = r.vh && r.vh.length ? `${r.vh.length} mätningar, ${esc(r.vh[0][0])} – ${esc(r.vh[r.vh.length - 1][0])}` : '';
-    return `<tr class="detail"><td colspan="${span}"><div class="dgrid">
+    return `<div class="dgrid">
       <div><h4>Objekt</h4><dl class="kv">
         <dt>Utropspris</dt><dd>${kr(r.price)} kr</dd>
         ${r.price0 && r.price0 !== r.price ? `<dt>Först sett</dt><dd>${kr(r.price0)} kr</dd>` : ''}
@@ -700,14 +754,47 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
           ${[['fav', '★ Intressant'], ['maybe', '◐ Kanske'], ['no', '✕ Nej']].map(([s, l]) => `<button type="button" data-act="mark" data-id="${esc(r.id)}" data-s="${s}" aria-pressed="${m.s === s}" >${l}</button>`).join('')}
         </div>
         <textarea class="note" id="note-${esc(r.id)}" data-id="${esc(r.id)}" placeholder="Anteckning, t.ex. vad mäklaren sa" >${esc(m.note || '')}</textarea>
-        <div class="sub" id="ns-${esc(r.id)}">${m.by ? `Senast ändrad av ${esc(m.by)}${m.ts ? ', ' + esc(d0(Math.round(m.ts / 1000))) : ''}` : 'Sparas för er båda'}</div>
+        <div class="sub" id="ns-${esc(r.id)}">${m.ts > 1e6 ? `Senast ändrad ${esc(d0(Math.round(m.ts / 1000)))}` : 'Sparas för er båda'}</div>
       </div>
-    </div></td></tr>`;
+    </div>`;
+  }
+  const isMobile = () => window.matchMedia('(max-width: 760px)').matches;
+  const pctS = (v) => `${v > 0 ? '+' : ''}${(v * 100).toFixed(0)} %`;
+  function cardHtml(r) {
+    const m = marks[r.id]?.s;
+    const show = r.showMatch ?? r.nextShow;
+    const meta = [];
+    if (show) meta.push(`Visning <b>${esc(dt(show))}</b>`);
+    else if (r.lastShow) meta.push(`Visad ${esc(d0(r.lastShow))}`);
+    if (r.vsArea != null) meta.push(`<span class="${r.vsArea <= -0.05 ? 'down' : r.vsArea >= 0.05 ? 'up' : ''}">${pctS(r.vsArea)} mot område</span>`);
+    if (r.vsEst != null) meta.push(`<span class="${r.vsEst <= -0.05 ? 'down' : r.vsEst >= 0.05 ? 'up' : ''}">${pctS(r.vsEst)} mot Booli</span>`);
+    if (r.daysOut != null && !r.soon) meta.push(`${r.daysOut} d ute`);
+    if (r.soldPrice) meta.push(`Slutpris ${mkr(r.soldPrice)} Mkr (${pctS(r.soldVs)})`);
+    const btn = (s, l, aria) => `<button type="button" class="cb cb-${s}" data-act="mark" data-id="${esc(r.id)}" data-s="${s}" aria-pressed="${m === s}" aria-label="${aria}">${l}</button>`;
+    return `<article class="co${st.open === r.id ? ' open' : ''}${r.ended ? ' ended' : ''}${m ? ' m-' + m : ''}" data-id="${esc(r.id)}">
+      <div class="co-top"><div class="co-addr"><a href="${esc(r.hUrl || r.bUrl || '#')}" target="_blank" rel="noopener" data-act="link">${esc(r.addr || r.slug)}</a>${r.onlyB ? '<span class="src">Booli</span>' : ''}<small>${esc(r.area || r.areaN)}</small></div>${r.sig}</div>
+      <div class="co-nums"><b>${mkr(r.price)} Mkr</b><span>${r.sqm == null ? '–' : String(r.sqm).replace('.', ',')} m²</span><span>${r.rooms == null ? '–' : String(r.rooms).replace('.', ',')} rum</span><span>${kr(r.fee)} kr/mån</span><span>${kr(r.sqmPrice)} kr/m²</span></div>
+      <div class="co-meta">${meta.join('<i>·</i>')}</div>
+      <div class="co-acts">${btn('fav', '★ Intressant', 'Intressant')}${btn('maybe', '? Kanske', 'Kanske')}${btn('no', '✕ Nej', 'Inte intressant')}<button type="button" class="cb cb-more" data-act="open" data-id="${esc(r.id)}" aria-expanded="${st.open === r.id}" aria-label="${st.open === r.id ? 'Stäng detaljer' : 'Visa detaljer'}">${st.open === r.id ? '▴' : '▾'}</button></div>
+      ${st.open === r.id ? `<div class="co-detail">${detailInner(r)}</div>` : ''}
+    </article>`;
   }
   function renderList(b) {
-    renderViews(b); renderHead();
+    renderViews(b);
     const v = VIEWS.find((x) => x.k === st.view) || VIEWS[0];
     const list = sorted(b.filter(v.f));
+    const mob = isMobile();
+    $('tablebox').hidden = mob; $('cardbox').hidden = !mob;
+    if (mob) {
+      $('msort').value = st.sort[0] + ':' + st.sort[1];
+      if (!$('msort').value) $('msort').value = '';
+      $('mcount').textContent = rows.length ? `${list.length} objekt` : '';
+      $('cards').innerHTML = !rows.length ? '<div class="empty"><b>Hämtar objekt …</b>Listan fylls från senaste hämtningen.</div>'
+        : !list.length ? `<div class="empty"><b>${st.view === 'todo' ? 'Allt genomgånget' : 'Inga objekt matchar'}</b>${st.view === 'todo' ? 'Alla objekt i urvalet är markerade.' : 'Lätta på filtren eller byt vy.'}</div>`
+        : list.map(cardHtml).join('');
+      return;
+    }
+    renderHead();
     const cols = visibleCols();
     if (!rows.length) {
       $('tbody').innerHTML = `<tr><td class="empty" colspan="${cols.length}"><b>Hämtar objekt …</b>Listan fylls från senaste hämtningen.</td></tr>`;
@@ -910,7 +997,8 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   }
 
   // ---------- kalender ----------
-  const ELSA = 'frisk.elsa@gmail.com';
+  // Båda bjuds alltid in, oavsett vems telefon som skapar händelsen (Google hoppar över skaparens egen adress).
+  const GUESTS = 'frisk.elsa@gmail.com,jonathan.af.svensson@gmail.com';
   const calStamp = (s) => {
     const p = Object.fromEntries(new Intl.DateTimeFormat('sv-SE', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(s * 1000)).map((x) => [x.type, x.value]));
     return { d: `${p.year}${p.month}${p.day}`, t: `${p.hour}${p.minute}${p.second}` };
@@ -926,10 +1014,10 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
       r.hUrl ? `Hemnet: ${r.hUrl}` : null,
       r.bUrl ? `Booli: ${r.bUrl}` : null,
     ].filter(Boolean).join('\n');
-    const q = new URLSearchParams({ action: 'TEMPLATE', text: `Visning: ${r.addr}`, dates, ctz: TZ, location: `${r.addr}, Stockholm`, details: lines, add: ELSA });
+    const q = new URLSearchParams({ action: 'TEMPLATE', text: `Visning: ${r.addr}`, dates, ctz: TZ, location: `${r.addr}, Stockholm`, details: lines, add: GUESTS });
     return 'https://calendar.google.com/calendar/render?' + q.toString();
   }
-  const calLink = (r, s) => `<a class="btn-cal" href="${esc(calUrl(r, s))}" target="_blank" rel="noopener" title="Öppnar Google Kalender med visningen och Elsa som gäst">＋ Kalender</a>`;
+  const calLink = (r, s) => `<a class="btn-cal" href="${esc(calUrl(r, s))}" target="_blank" rel="noopener" title="Öppnar Google Kalender med visningen, Elsa och Jonathan bjuds in">＋ Kalender</a>`;
 
   // ---------- karta ----------
   const colorOf = (r) => r.isNeg ? '#00897b' : r.sigKey === 'bid' ? '#c47f17' : r.soon ? '#3b4f7a' : '#8f9a97';
@@ -986,7 +1074,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
 
   // ---------- samlad rendering ----------
   function filterSummary() {
-    const n = (st.show.k !== 'all' ? 1 : 0) + FILTER_IDS.filter((id) => $(id).value.trim() !== '').length + st.areas.length + ($('balc').checked ? 1 : 0) + ($('elev').checked ? 1 : 0);
+    const n = (st.show.k !== 'all' ? 1 : 0) + FILTER_IDS.filter((id) => $(id).value.trim() !== '').length + st.areas.length + ($('balc').checked ? 1 : 0) + ($('onlyFav').checked ? 1 : 0);
     $('fsum').textContent = n ? `${n} aktiva` : 'inga aktiva';
   }
   function renderAll() {
@@ -1024,51 +1112,76 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   $('areas').addEventListener('click', (e) => { const b = e.target.closest('[data-area]'); if (!b) return; const a = b.dataset.area; st.areas = st.areas.includes(a) ? st.areas.filter((x) => x !== a) : st.areas.concat(a); b.setAttribute('aria-pressed', st.areas.includes(a)); renderAll(); });
   FILTER_IDS.forEach((id) => $(id).addEventListener('input', renderAll));
   CHK_IDS.forEach((id) => $(id).addEventListener('change', renderAll));
-  $('reset').addEventListener('click', () => { FILTER_IDS.forEach((id) => $(id).value = ''); $('balc').checked = false; $('elev').checked = false; $('hideNo').checked = true; st.areas = []; st.show = { k: 'all', from: '', to: '' }; renderShowChips(); renderAreas(); renderAll(); });
+  $('reset').addEventListener('click', () => { FILTER_IDS.forEach((id) => $(id).value = ''); $('balc').checked = false; $('onlyFav').checked = false; $('hideNo').checked = true; st.areas = []; st.show = { k: 'all', from: '', to: '' }; renderShowChips(); renderAreas(); renderAll(); });
   $('colbtn').addEventListener('click', () => { const p = $('colpanel'); p.hidden = !p.hidden; $('colbtn').setAttribute('aria-expanded', String(!p.hidden)); });
   document.addEventListener('click', (e) => { if (!e.target.closest('.colmenu')) { $('colpanel').hidden = true; $('colbtn').setAttribute('aria-expanded', 'false'); } });
   $('colpanel').addEventListener('change', (e) => { const k = e.target.dataset.col; if (!k) return; st.hidden = e.target.checked ? st.hidden.filter((x) => x !== k) : st.hidden.concat(k); renderAll(); });
   $('thead').addEventListener('click', (e) => { const th = e.target.closest('[data-sort]'); if (!th) return; const k = th.dataset.sort; st.sort = st.sort[0] === k ? [k, -st.sort[1]] : [k, ['addr', 'sig', 'agency', 'floor', 'mark', 'vsArea'].includes(k) ? 1 : -1]; renderAll(); });
-  $('tbody').addEventListener('click', (e) => {
+  const MLAB = { fav: 'Intressant', maybe: 'Kanske', no: 'Nej' };
+  let toastT;
+  function toast(html, undo) {
+    const el = $('toast'); el.innerHTML = html + (undo ? ' <button type="button" id="undo">Ångra</button>' : ''); el.hidden = false;
+    if (undo) $('undo').onclick = () => { el.hidden = true; undo(); };
+    clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 5000);
+  }
+  function markFromUi(id, s) {
+    const prev = marks[id]?.s || null;
+    const next = prev === s ? null : s;
+    setMark(id, { s: next });
+    if (isMobile() && $('ns-' + id) == null) {
+      const r = rows.find((x) => x.id === id);
+      toast(next ? `${esc(r?.addr || '')}: <b>${MLAB[next]}</b>` : `${esc(r?.addr || '')}: markering borttagen`, () => setMark(id, { s: prev }));
+    }
+  }
+  function onListClick(e) {
     const a = e.target.closest('[data-act]');
     if (a && a.dataset.act === 'link') return;
     if (a && a.dataset.act === 'cycle') { e.stopPropagation(); const cur = marks[a.dataset.id]?.s; const next = { undefined: 'fav', fav: 'maybe', maybe: 'no', no: null }[cur]; setMark(a.dataset.id, { s: next }); return; }
-    if (a && a.dataset.act === 'mark') { const cur = marks[a.dataset.id]?.s; setMark(a.dataset.id, { s: cur === a.dataset.s ? null : a.dataset.s }); return; }
-    if (e.target.closest('tr.detail')) return;
-    const tr = e.target.closest('tr.row'); if (!tr) return;
-    st.open = st.open === tr.dataset.id ? null : tr.dataset.id; renderAll();
-  });
+    if (a && a.dataset.act === 'mark') { markFromUi(a.dataset.id, a.dataset.s); return; }
+    if (e.target.closest('tr.detail, .co-detail')) return;
+    if (e.target.closest('a, button:not([data-act="open"]), select, textarea, input')) return;
+    const row = e.target.closest('tr.row, article.co'); if (!row) return;
+    st.open = st.open === row.dataset.id ? null : row.dataset.id; renderAll();
+    if (st.open && row.tagName === 'ARTICLE') setTimeout(() => document.querySelector(`article.co[data-id="${CSS.escape(st.open)}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 30);
+  }
+  $('tbody').addEventListener('click', onListClick);
+  $('cards').addEventListener('click', onListClick);
   const noteTimers = {};
-  $('tbody').addEventListener('input', (e) => {
+  function onNoteInput(e) {
     const ta = e.target.closest('textarea.note'); if (!ta) return;
     const id = ta.dataset.id; clearTimeout(noteTimers[id]);
     $('ns-' + id).textContent = 'Sparar …';
     noteTimers[id] = setTimeout(() => setMark(id, { note: ta.value }, true), 900);
-  });
-  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (st.tab === 'an') renderAll(); }, 150); });
+  }
+  $('tbody').addEventListener('input', onNoteInput);
+  $('cards').addEventListener('input', onNoteInput);
+  $('msort').addEventListener('change', (e) => { const [k, d] = e.target.value.split(':'); st.sort = [k, +d]; renderAll(); });
+  let wasMob = isMobile();
+  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { const m = isMobile(); if (st.tab === 'an' || m !== wasMob) { wasMob = m; renderAll(); } }, 150); });
   $('fbox').open = window.innerWidth > 640;
 
   // ---------- data (Apps Script-backend) ----------
   const BACKEND = 'https://script.google.com/macros/s/AKfycbyUSjiNZaPtK18wNRvkNewgL9_fuCLGPV2sJ6MFZA_MiXyYwSxayMfedncJrBtP__JH/exec';
-  const who = () => $('who').value;
-  try { const w = localStorage.getItem('bj2:who'); if (w) $('who').value = w; } catch {}
-  $('who').addEventListener('change', () => { try { localStorage.setItem('bj2:who', who()); } catch {} });
+  const who = () => 'Vi'; // markeringar är gemensamma
 
   async function getJSON(what, tries = 4) {
     for (let i = 0; ; i++) {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 12000);
       try {
-        const r = await fetch(`${BACKEND}?what=${what}&t=${Date.now()}`);
+        const r = await fetch(`${BACKEND}?what=${what}&t=${Date.now()}`, { signal: ctl.signal });
         if (!r.ok) throw new Error(String(r.status));
-        return await r.json();
+        const t = await r.text();
+        if (t[0] !== '{' && t[0] !== '[') throw new Error('inte json');
+        return JSON.parse(t);
       } catch (err) {
         if (i >= tries - 1) throw err;
-        await new Promise((res) => setTimeout(res, 1500 * (i + 1)));
-      }
+        await new Promise((res) => setTimeout(res, 1000 * (i + 1)));
+      } finally { clearTimeout(timer); }
     }
   }
   const writing = {};
   async function setMark(id, patch, quiet) {
-    if (!who()) { const el = $('ns-' + id); if (el) el.textContent = 'Välj vem du är överst på sidan först'; $('who').focus(); return; }
     const next = { ...(marks[id] || {}), ...patch, ts: Date.now(), by: who() };
     marks[id] = next;
     if (!quiet) renderAll();
@@ -1088,19 +1201,25 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   function stampText() {
     if (!meta) return 'Hämtar data …';
     const runs = (meta.runs || []).filter((r) => r.source !== 'booli');
+    if (isMobile()) return `Uppdaterad <b>${esc(dt(meta.updated))}</b>`;
     return `Uppdaterad <b>${esc(dt(meta.updated))}</b> · ${runs.length} hämtning${runs.length === 1 ? '' : 'ar'} sedan ${esc(d0(runs[0]?.at))}`;
   }
   async function loadAll() {
+    // Objekten visas så snart de kommit; markeringarna fylls på när de kommer (de får inte blockera listan).
+    const mkP = getJSON('marks').then((mk) => { marks = { ...(mk || {}), ...marks }; if (rows.length) renderAll(); return true; })
+      .catch((err) => { console.error('bostadsjakt: markeringar', err); return false; });
     try {
-      const [state, mk] = await Promise.all([getJSON('state'), getJSON('marks')]);
+      const state = await getJSON('state');
       meta = state.meta || {};
-      marks = mk || {};
       rows = (state.rows || []).map(derive); addAreaRel(rows);
       $('stamp').innerHTML = stampText();
       $('foot').innerHTML = '<span>Källor: Hemnet och Booli. Sökning: Stockholm inom tullarna (Booli: innerstaden) · bostadsrätt · minst 2 rum · minst 60 m² · högst 12 Mkr · ej nyproduktion</span><span>Visningar som passerat sparas från och med första hämtningen. Objekt som redan låg ute då bedöms därför som troliga.</span><span>Karta © OpenStreetMap-bidragsgivare.</span>';
       renderAreas(); renderAll();
+      if (!(await mkP)) { $('stamp').innerHTML = stampText() + ' · markeringar laddas om strax'; setTimeout(refreshMarks, 5000); }
     } catch (err) {
-      console.error('bostadsjakt: laddning misslyckades', err); $('stamp').innerHTML = 'Kunde inte hämta data. <a href="#" id="retry">Försök igen</a>'; const rt = $('retry'); if (rt) rt.onclick = (e) => { e.preventDefault(); $('stamp').textContent = 'Hämtar data …'; loadAll(); };
+      console.error('bostadsjakt: laddning misslyckades', err);
+      $('stamp').innerHTML = 'Kunde inte hämta data. <a href="#" id="retry">Försök igen</a>';
+      const rt = $('retry'); if (rt) rt.onclick = (e) => { e.preventDefault(); $('stamp').textContent = 'Hämtar data …'; loadAll(); };
     }
   }
   async function refreshMarks() {
@@ -1109,6 +1228,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
       const ta = document.activeElement && document.activeElement.matches('textarea.note');
       marks = { ...mk, ...Object.fromEntries(Object.entries(marks).filter(([id, m]) => !mk[id] || (mk[id].ts || 0) < (m.ts || 0))) };
       if (!ta) renderAll();
+      if (meta) $('stamp').innerHTML = stampText();
     } catch {}
   }
   function boot() {
