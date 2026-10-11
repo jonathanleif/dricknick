@@ -451,7 +451,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
     const lastShow = past.length ? Math.max(...past) : null;
     let sig, sigKey, sigRank;
     if (soon) {
-      sig = `<span class="pill p-soon">Snart till salu</span>`; sigKey = 'soon'; sigRank = 6;
+      sig = upcoming.length ? `<span class="pill p-soon">Förhandsvisning ${esc(dt(upcoming[0]).replace('.', ''))}</span>` : `<span class="pill p-soon">Snart till salu</span>`; sigKey = 'soon'; sigRank = upcoming.length ? 5.5 : 6;
     } else if (!active) {
       const lbl = { Sold: 'Såld', DeactivatedBeforeOpenHouse: 'Såld före visning', Gone: 'Borttagen' }[r.status] || r.status;
       sig = `<span class="pill p-end">${esc(lbl)}</span>`; sigKey = 'ended'; sigRank = 9;
@@ -512,22 +512,22 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
     { k: 'addr', h: 'Adress', cls: 'addr', sort: (r) => r.addr || '', fixed: true },
     { k: 'sig', h: 'Läge', sort: (r) => r.sigRank * 1000 - (r.sinceShow ?? 0) },
     { k: 'price', h: 'Pris Mkr', num: 1, sort: (r) => r.price },
-    { k: 'soldPrice', h: 'Slutpris Mkr', num: 1, sort: (r) => r.soldPrice, ended: 1 },
-    { k: 'soldVs', h: 'Mot utrop', num: 1, sort: (r) => r.soldVs, ended: 1 },
-    { k: 'sqmPrice', h: 'kr/m²', num: 1, sort: (r) => r.sqmPrice },
-    { k: 'vsArea', h: 'Mot område', num: 1, sort: (r) => r.vsArea },
-    { k: 'est', h: 'Booli-värd.', num: 1, sort: (r) => r.est },
-    { k: 'vsEst', h: 'Utrop mot värd.', num: 1, sort: (r) => r.vsEst },
-    { k: 'nextShow', h: 'Nästa visning', num: 1, sort: (r) => r.showMatch ?? r.nextShow },
     { k: 'sqm', h: 'm²', num: 1, sort: (r) => r.sqm },
     { k: 'rooms', h: 'Rum', num: 1, sort: (r) => r.rooms },
     { k: 'fee', h: 'Avgift', num: 1, sort: (r) => r.fee },
-    { k: 'feeSqm', h: 'Avg/m²', num: 1, sort: (r) => r.feeSqm, off: 1 },
+    { k: 'sqmPrice', h: 'kr/m²', num: 1, sort: (r) => r.sqmPrice },
+    { k: 'vsArea', h: 'Mot område', num: 1, sort: (r) => r.vsArea },
+    { k: 'nextShow', h: 'Nästa visning', num: 1, sort: (r) => r.showMatch ?? r.nextShow },
+    { k: 'est', h: 'Booli-värd.', num: 1, sort: (r) => r.est },
+    { k: 'vsEst', h: 'Utrop mot värd.', num: 1, sort: (r) => r.vsEst },
+    { k: 'soldPrice', h: 'Slutpris Mkr', num: 1, sort: (r) => r.soldPrice, ended: 1 },
+    { k: 'soldVs', h: 'Mot utrop', num: 1, sort: (r) => r.soldVs, ended: 1 },
     { k: 'daysOut', h: 'Dagar ute', num: 1, sort: (r) => r.daysOut },
     { k: 'shows', h: 'Visningar', num: 1, sort: (r) => r.pastN * 10 + r.upN },
     { k: 'sinceShow', h: 'Sedan visning', num: 1, sort: (r) => r.sinceShow },
     { k: 'pmove', h: 'Prisändr.', num: 1, sort: (r) => r.pmove },
     { k: 'views', h: 'Sidvisn.', num: 1, sort: (r) => r.views },
+    { k: 'feeSqm', h: 'Avg/m²', num: 1, sort: (r) => r.feeSqm, off: 1 },
     { k: 'vpd', h: 'Visn./dag', num: 1, sort: (r) => r.vpd, off: 1 },
     { k: 'year', h: 'Byggår', num: 1, sort: (r) => r.year },
     { k: 'floor', h: 'Våning', sort: (r) => r.floor || '', off: 1 },
@@ -562,12 +562,13 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
 
   // ---------- vyer ----------
   const VIEWS = [
+    { k: 'active', h: 'Alla aktiva', f: (r) => !r.ended && !r.soon },
     { k: 'todo', h: 'Att gå igenom', f: (r) => !r.ended && !r.soon && !marks[r.id]?.s, sort: ['daysOut', 1] },
     { k: 'neg', h: 'Visad, inga bud', f: (r) => r.isNeg, sort: ['sig', 1] },
-    { k: 'show', h: 'Visning kommande', f: (r) => !r.ended && r.upN > 0, sort: ['nextShow', 1] },
+    { k: 'show', h: 'Visning kommande', f: (r) => !r.ended && !r.soon && r.upN > 0, sort: ['nextShow', 1] },
+    { k: 'preview', h: 'Förhandsvisning', f: (r) => r.soon && r.upN > 0, sort: ['nextShow', 1] },
     { k: 'good', h: 'Bra pris', f: (r) => !r.ended && !r.soon && ((r.vsEst != null && r.vsEst <= -0.12) || (r.vsArea != null && r.vsArea <= -0.15)), sort: ['vsEst', 1] },
     { k: 'new', h: 'Nya, 7 dagar', f: (r) => !r.ended && !r.soon && r.daysOut != null && r.daysOut <= 7, sort: ['daysOut', 1] },
-    { k: 'active', h: 'Alla aktiva', f: (r) => !r.ended && !r.soon },
     { k: 'bid', h: 'Budgivning', f: (r) => r.sigKey === 'bid' },
     { k: 'soon', h: 'Snart till salu', f: (r) => r.soon, sort: ['daysOut', 1] },
     { k: 'ended', h: 'Sålda och borttagna', f: (r) => r.ended, sort: ['soldVs', -1] },
@@ -579,9 +580,9 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
   let meta = null;
   let marks = {};
   let canWrite = true;
-  const st = Object.assign({ tab: 'list', view: 'todo', sort: ['sig', 1], areas: [], show: { k: 'all', from: '', to: '' }, hidden: COLS.filter((c) => c.off).map((c) => c.k) }, store.get('state', {}));
+  const st = Object.assign({ tab: 'list', view: 'active', sort: ['sig', 1], areas: [], show: { k: 'all', from: '', to: '' }, hidden: COLS.filter((c) => c.off).map((c) => c.k) }, store.get('state', {}));
   st.open = null;
-  if (!VIEWS.some((v) => v.k === st.view)) st.view = 'todo';
+  if (!VIEWS.some((v) => v.k === st.view)) st.view = 'active';
   if (!COLS.some((c) => c.k === st.sort[0])) st.sort = ['sig', 1];
   const FILTER_IDS = ['q', 'pmax', 'smin', 'rmin', 'fmax'];
   const CHK_IDS = ['balc', 'hideNo', 'onlyFav'];
