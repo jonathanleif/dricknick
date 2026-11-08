@@ -689,7 +689,7 @@ tr.detail td { background: #f8f9f7; white-space: normal; padding: 14px 16px 18px
       if (hideNo && ms === 'no') return false;
       if (st.areas.length && !st.areas.includes(r.areaN)) return false;
       if (q && !`${r.addr} ${r.area} ${r.brf} ${r.agency}`.toLowerCase().includes(q)) return false;
-      if (pmax != null && (r.price ?? 1e12) > pmax * 1e6) return false;
+      if (pmax != null && r.price != null && r.price > pmax * 1e6) return false;   // objekt utan pris visas alltid
       if (smin != null && (r.sqm ?? 0) < smin) return false;
       if (rmin != null && (r.rooms ?? 0) < rmin) return false;
       if (fmax != null && (r.fee ?? 1e9) > fmax) return false;
